@@ -1,0 +1,16 @@
+app:
+  name: "ApiGateway"
+  read_timeout: 10
+  write_timeout: 10
+  enable_request_id: true
+  enable_logging: true
+  enable_error_handling: true
+
+http:
+  host: 0.0.0.0
+  port: ${HTTP_PORT}
+
+logging:
+  level: debug
+  format: json
+  enable_http_logs: true
