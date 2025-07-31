@@ -156,115 +156,140 @@
 </template>
 
 <script>
+import { ref, computed } from 'vue'
+
 export default {
   name: "News",
-  data() {
-    return {
-      news: [],
-      loading: false,
-      error: '',
-      info: '',
-      limitCount: null,
-      newsId: null,
-      baseUrl: "http://localhost:8080",
-      // Пагинация
-      currentPage: 1,
-      itemsPerPage: 10
-    };
-  },
-  computed: {
-    totalPages() {
-      return Math.ceil(this.news.length / this.itemsPerPage);
-    },
-    paginatedNews() {
-      const start = (this.currentPage - 1) * this.itemsPerPage;
-      const end = start + this.itemsPerPage;
-      return this.news.slice(start, end);
-    }
-  },
-  methods: {
-    async fetchNews(endpoint, successMessage = '', expectWrapped = false) {
-      this.loading = true;
-      this.error = '';
-      this.info = '';
+  setup() {
+    // Реактивные переменные
+    const news = ref([])
+    const loading = ref(false)
+    const error = ref('')
+    const info = ref('')
+    const limitCount = ref(null)
+    const newsId = ref(null)
+    const currentPage = ref(1)
+    const itemsPerPage = ref(10)
+
+    // Получение baseUrl из переменных окружения
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'
+
+    // Вычисляемые свойства
+    const totalPages = computed(() => {
+      return Math.ceil(news.value.length / itemsPerPage.value)
+    })
+
+    const paginatedNews = computed(() => {
+      const start = (currentPage.value - 1) * itemsPerPage.value
+      const end = start + itemsPerPage.value
+      return news.value.slice(start, end)
+    })
+
+    // Методы
+    const fetchNews = async (endpoint, successMessage = '', expectWrapped = false) => {
+      loading.value = true
+      error.value = ''
+      info.value = ''
 
       try {
-        const url = this.baseUrl + endpoint;
-        const response = await fetch(url);
+        const url = baseUrl + endpoint
+        const response = await fetch(url)
 
         if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`)
         }
 
-        const data = await response.json();
+        const data = await response.json()
 
         if (expectWrapped) {
           // Для /news и /news/latest?limit= - данные в формате {posts: [...]}
           if (data && data.posts && Array.isArray(data.posts)) {
-            this.news = data.posts;
+            news.value = data.posts
           } else {
-            this.news = [];
+            news.value = []
           }
         } else {
           // Для /news/last и /news/id - возвращается напрямую объект новости
           if (Array.isArray(data)) {
-            this.news = data;
+            news.value = data
           } else if (data && typeof data === 'object') {
             // Если получили один объект, оборачиваем в массив
-            this.news = [data];
+            news.value = [data]
           } else {
-            this.news = [];
+            news.value = []
           }
         }
 
         if (successMessage) {
-          this.info = successMessage;
+          info.value = successMessage
         }
 
         // Сбрасываем на первую страницу при новой загрузке
-        this.currentPage = 1;
+        currentPage.value = 1
 
       } catch (err) {
-        this.error = `Ошибка при загрузке новостей: ${err.message}`;
-        this.news = [];
+        error.value = `Ошибка при загрузке новостей: ${err.message}`
+        news.value = []
       } finally {
-        this.loading = false;
+        loading.value = false
       }
-    },
+    }
 
-    getAllNews() {
-      this.fetchNews('/news', 'Загружены все новости', true);
-    },
+    const getAllNews = () => {
+      fetchNews('/news', 'Загружены все новости', true)
+    }
 
-    getLastNews() {
-      this.fetchNews('/news/last', 'Загружена последняя новость', false);
-    },
+    const getLastNews = () => {
+      fetchNews('/news/last', 'Загружена последняя новость', false)
+    }
 
-    getLatestNews() {
-      if (!this.limitCount || this.limitCount < 1) {
-        this.error = 'Укажите корректное количество новостей';
-        return;
+    const getLatestNews = () => {
+      if (!limitCount.value || limitCount.value < 1) {
+        error.value = 'Укажите корректное количество новостей'
+        return
       }
-      this.fetchNews(
-          `/news/latest?limit=${this.limitCount}`,
-          `Загружены последние ${this.limitCount} новостей`,
+      fetchNews(
+          `/news/latest?limit=${limitCount.value}`,
+          `Загружены последние ${limitCount.value} новостей`,
           true
-      );
-    },
+      )
+    }
 
-    getNewsById() {
-      if (!this.newsId || this.newsId < 1) {
-        this.error = 'Укажите корректный ID новости';
-        return;
+    const getNewsById = () => {
+      if (!newsId.value || newsId.value < 1) {
+        error.value = 'Укажите корректный ID новости'
+        return
       }
-      this.fetchNews(
-          `/news/${this.newsId}`,
-          `Загружена новость с ID ${this.newsId}`,
+      fetchNews(
+          `/news/${newsId.value}`,
+          `Загружена новость с ID ${newsId.value}`,
           false
-      );
+      )
+    }
+
+    return {
+      // Реактивные переменные
+      news,
+      loading,
+      error,
+      info,
+      limitCount,
+      newsId,
+      currentPage,
+      itemsPerPage,
+
+      // Вычисляемые свойства
+      totalPages,
+      paginatedNews,
+
+      // Методы
+      getAllNews,
+      getLastNews,
+      getLatestNews,
+      getNewsById
     }
   }
-};
+}
 </script>
 
 <style scoped>

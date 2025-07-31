@@ -1,0 +1,14 @@
+services:
+  go-news-frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: vue-frontend
+    ports:
+      - "80:80"
+    networks: ["go-news_network"]
+    restart: always
+
+networks:
+  go-news_network:
+    external: true
