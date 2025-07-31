@@ -17,7 +17,6 @@ func main() {
 	}
 
 	logger.InitLogger(cfg.App.Name)
-	//log := logger.GetLogger()
 	if err = app.Run(cfg); err != nil {
 		fmt.Println("service failed to start:", err)
 		//log.Fatal().Err(err).Msg("Service failed to start")

@@ -1,5 +1,5 @@
 app:
-  name: "ApiGateway"
+  name: ${APP_NAME}
   read_timeout: 10
   write_timeout: 10
   enable_request_id: true
@@ -7,10 +7,10 @@ app:
   enable_error_handling: true
 
 http:
-  host: 0.0.0.0
+  host: ${HTTP_HOST}
   port: ${HTTP_PORT}
 
 logging:
-  level: debug
-  format: json
-  enable_http_logs: true
+  level: ${LOGGING_LEVEL}
+  format: ${LOGGING_FORMAT}
+  enable_http_logs: ${LOGGING_ENABLE_HTTP}
