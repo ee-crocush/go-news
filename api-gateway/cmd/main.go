@@ -8,6 +8,22 @@ import (
 	"github.com/ee-crocush/go-news/pkg/logger"
 )
 
+// @title GoNews API Gateway
+// @version 1.0
+// @description API-шлюз для микросервисов агрегатора новостей и комментариев.
+// @termsOfService https://go-news.example.com/terms/
+
+// @contact.name Вымышленная команда поддержки GoNews
+// @contact.url https://go-news.example.com/support
+// @contact.email support@go-news.example.com
+
+// @license.name MIT License
+// @license.url https://opensource.org/licenses/MIT
+
+// @host localhost:8080
+// @BasePath /
+
+// @schemes http
 func main() {
 	paths := []string{
 		"./configs/dev.yaml",

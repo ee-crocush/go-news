@@ -52,17 +52,36 @@ func (h *Handler) proxyRequest(c *fiber.Ctx, routeName, path string) error {
 	return c.Status(resp.StatusCode).Send(body)
 }
 
-// FindAll получает все новости
+// FindAll получает все новости.
+// @Summary Получить все новости
+// @Description Возвращает список всех новостей.
+// @Tags news
+// @Produce json
+// @Success 200 {array} PostResponse
+// @Router /api/news [get]
 func (h *Handler) FindAll(c *fiber.Ctx) error {
 	return h.proxyRequest(c, "go-news", "/news")
 }
 
 // FindLast получает последнюю новость.
+// @Summary Получить последнюю новость
+// @Description Возвращает последнюю новость.
+// @Tags news
+// @Produce json
+// @Success 200 {object} PostResponse
+// @Router /api/news/last [get]
 func (h *Handler) FindLast(c *fiber.Ctx) error {
 	return h.proxyRequest(c, "go-news", "/news/last")
 }
 
 // FindLatest получает последние n новости.
+// @Summary Получить последние n новостей
+// @Description Возвращает последние n новостей.
+// @Tags news
+// @Param limit path int false "Количество последних новостей" default(10)
+// @Produce json
+// @Success 200 {object} PostResponse
+// @Router /api/news/latest/{limit} [get]
 func (h *Handler) FindLatest(c *fiber.Ctx) error {
 	limit := c.Params("limit", "10")
 	path := fmt.Sprintf("/news/latest/?=%s", limit)
@@ -71,6 +90,13 @@ func (h *Handler) FindLatest(c *fiber.Ctx) error {
 }
 
 // FindByID получает новость по ID.
+// @Summary Получить новость по ID
+// @Description Возвращает новость по ID.
+// @Tags news
+// @Param id path string true "ID новости"
+// @Produce json
+// @Success 200 {object} PostResponse
+// @Router /api/news/{id} [get]
 func (h *Handler) FindByID(c *fiber.Ctx) error {
 	id := c.Params("id")
 	path := fmt.Sprintf("/news/%s", id)

@@ -28,7 +28,13 @@ func NewHandler(cfg fiberServer.Config, registry service.RegistryService, timeou
 	}
 }
 
-// HealthCheckHandler обработчик для проверки жизнеспособности API Gateway
+// HealthCheckHandler обработчик для проверки жизнеспособности API Gateway.
+// @Summary Health check
+// @Description Возвращает статус сервиса, аптайм и версию.
+// @Tags Health
+// @Produce json
+// @Success 200 {object} HealthResponse
+// @Router /health [get]
 func (h *Handler) HealthCheckHandler(c *fiber.Ctx) error {
 	uptime := time.Since(h.startTime)
 

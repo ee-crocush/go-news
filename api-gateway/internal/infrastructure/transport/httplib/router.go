@@ -2,6 +2,7 @@
 package httplib
 
 import (
+	_ "github.com/ee-crocush/go-news/api-gateway/docs"
 	"github.com/ee-crocush/go-news/api-gateway/internal/infrastructure/service"
 	"github.com/ee-crocush/go-news/api-gateway/internal/infrastructure/transport/httplib/handler/comments"
 	"github.com/ee-crocush/go-news/api-gateway/internal/infrastructure/transport/httplib/handler/health"
@@ -9,6 +10,7 @@ import (
 	fiberServer "github.com/ee-crocush/go-news/pkg/server/fiber"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/recover"
+	"github.com/gofiber/swagger"
 	"time"
 )
 
@@ -32,6 +34,7 @@ func NewHandlers(cfg fiberServer.Config, registry service.RegistryService, timeo
 func SetupRoutes(app *fiber.App, handlers *Handlers) {
 	app.Use(recover.New())
 
+	app.Get("/swagger/*", swagger.HandlerDefault)
 	// Health checks для самого API Gateway
 	app.Get("/health", handlers.Health.HealthCheckHandler)
 	app.Get("/ready", handlers.Health.ReadinessHandler)
