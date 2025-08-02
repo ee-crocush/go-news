@@ -2,26 +2,29 @@
 package httplib
 
 import (
+	"github.com/ee-crocush/go-news/api-gateway/internal/infrastructure/service"
 	"github.com/ee-crocush/go-news/api-gateway/internal/infrastructure/transport/httplib/handler/comments"
 	"github.com/ee-crocush/go-news/api-gateway/internal/infrastructure/transport/httplib/handler/health"
 	"github.com/ee-crocush/go-news/api-gateway/internal/infrastructure/transport/httplib/handler/news"
+	fiberServer "github.com/ee-crocush/go-news/pkg/server/fiber"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/recover"
+	"time"
 )
 
-// Handlers группирует все обработчики
+// Handlers группирует все обработчики.
 type Handlers struct {
 	News     *news.Handler
 	Comments *comments.Handler
 	Health   *health.Handler
 }
 
-// NewHandlers создает все обработчики
-func NewHandlers() *Handlers {
+// NewHandlers создает все обработчики.
+func NewHandlers(cfg fiberServer.Config, registry service.RegistryService, timeout time.Duration) *Handlers {
 	return &Handlers{
-		News:     news.NewHandler(),
+		News:     news.NewHandler(registry, timeout),
 		Comments: comments.NewHandler(),
-		Health:   health.NewHandler(),
+		Health:   health.NewHandler(cfg, registry, timeout),
 	}
 }
 
@@ -32,7 +35,6 @@ func SetupRoutes(app *fiber.App, handlers *Handlers) {
 	// Health checks для самого API Gateway
 	app.Get("/health", handlers.Health.HealthCheckHandler)
 	app.Get("/ready", handlers.Health.ReadinessHandler)
-	app.Get("/live", handlers.Health.LivenessHandler)
 
 	// Группа API маршрутов
 	api := app.Group("/api")
@@ -57,10 +59,10 @@ func SetupRoutes(app *fiber.App, handlers *Handlers) {
 func setupNewsRoutes(api fiber.Router, h *news.Handler) {
 	newsGroup := api.Group("/news")
 	{
-		newsGroup.Get("/", h.FindAllHandler)                  // GET /api/news
-		newsGroup.Get("/last", h.FindLastHandler)             // GET /api/news/last
-		newsGroup.Get("/latest/:limit?", h.FindLatestHandler) // GET /api/news/latest/10
-		newsGroup.Get("/:id", h.FindByIDHandler)              // GET /api/news/123
+		newsGroup.Get("/", h.FindAll)
+		newsGroup.Get("/last", h.FindLast)
+		newsGroup.Get("/latest/:limit?", h.FindLatest)
+		newsGroup.Get("/:id", h.FindByID)
 	}
 }
 
@@ -69,7 +71,7 @@ func setupCommentsRoutes(api fiber.Router, h *comments.Handler) {
 	commentsGroup := api.Group("/comments")
 	{
 		// Получение комментариев к новости
-		commentsGroup.Get("/news/:newsId", h.GetCommentsHandler) // GET /api/comments/news/123
-		commentsGroup.Post("/", h.CreateCommentHandler)          // POST /api/comments
+		commentsGroup.Get("/news/:newsId", h.GetCommentsHandler)
+		commentsGroup.Post("/", h.CreateCommentHandler)
 	}
 }

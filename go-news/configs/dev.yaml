@@ -1,5 +1,6 @@
 app:
-  name: "GoNews"
+  name: ${APP_NAME}
+  version: ${APP_VERSION}
   read_timeout: 10
   write_timeout: 10
   enable_request_id: true
@@ -7,7 +8,7 @@ app:
   enable_error_handling: true
 
 http:
-  host: 0.0.0.0
+  host: ${HTTP_HOST}
   port: ${HTTP_PORT}
 
 mongodb:
@@ -17,9 +18,9 @@ mongodb:
   password: ${MONGO_PASSWORD}
   auth_source: ${MONGO_AUTH_SOURCE}
   database: ${MONGO_DB_NAME}
-  connect_timeout: 30s
+  connect_timeout: ${MONGO_TIMEOUT}
 
 logging:
-  level: debug
-  format: json
+  level: ${LOGGING_LEVEL}
+  format: ${LOGGING_FORMAT}
   enable_http_logs: true

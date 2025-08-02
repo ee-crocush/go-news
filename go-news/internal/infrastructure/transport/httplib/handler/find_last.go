@@ -1,7 +1,7 @@
 package handler
 
 import (
-	"GoNews/pkg/api"
+	"github.com/ee-crocush/go-news/pkg/api"
 	"github.com/gofiber/fiber/v2"
 )
 

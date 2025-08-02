@@ -1,8 +1,8 @@
 package handler
 
 import (
-	uc "GoNews/internal/usecase/post"
-	"GoNews/pkg/api"
+	uc "github.com/ee-crocush/go-news/go-news/internal/usecase/post"
+	"github.com/ee-crocush/go-news/pkg/api"
 	"github.com/gofiber/fiber/v2"
 	"strconv"
 )

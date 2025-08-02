@@ -1,38 +1,18 @@
 package middleware
 
 import (
-	"bufio"
-	"bytes"
 	"context"
 	"fmt"
 	"github.com/ee-crocush/go-news/pkg/logger"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 	"github.com/rs/zerolog"
-	"io"
 )
 
 // LoggingMiddleware возвращает middleware для логирования HTTP-запросов в Fiber.
 func LoggingMiddleware(log zerolog.Logger) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		var body string
-		if c.Request().Header.ContentLength() > 0 {
-			body = string(c.Body())
-		}
-
-		queryParams := c.Context().QueryArgs().String()
 		ip := c.IP()
-
-		// Получаем ответ
-		var responseBody bytes.Buffer
-		writer := io.MultiWriter(c.Response().BodyWriter(), &responseBody)
-		c.Response().SetBodyStreamWriter(
-			func(w *bufio.Writer) {
-				mw := bufio.NewWriter(writer)
-				defer mw.Flush()
-				_, _ = io.Copy(mw, c.Response().BodyStream())
-			},
-		)
 
 		ctx, done := logger.LogRequest(
 			log, c.Context(), "http", c.Method(), c.Path(),
@@ -48,9 +28,6 @@ func LoggingMiddleware(log zerolog.Logger) fiber.Handler {
 			Str("method", c.Method()).
 			Str("path", c.Path()).
 			Int("status_code", status).
-			Str("query_params", queryParams).
-			Str("body", body).
-			Str("response", truncate(responseBody.String(), 1000)).
 			Logger()
 
 		switch {
@@ -109,12 +86,4 @@ func ErrorHandlerMiddleware() fiber.Handler {
 		}()
 		return c.Next()
 	}
-}
-
-func truncate(s string, max int) string {
-	if len(s) > max {
-		return s[:max] + "...(truncated)"
-	}
-
-	return s
 }

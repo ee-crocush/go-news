@@ -1,30 +1,36 @@
 package app
 
 import (
-	"GoNews/internal/infrastructure/config"
-	repo "GoNews/internal/infrastructure/repo/mongo"
-	"GoNews/internal/infrastructure/rss"
-	"GoNews/internal/infrastructure/server"
-	"GoNews/internal/infrastructure/transport/httplib/handler"
-	uc "GoNews/internal/usecase/post"
 	"context"
 	"fmt"
+	"github.com/ee-crocush/go-news/go-news/internal/infrastructure/config"
+	repo "github.com/ee-crocush/go-news/go-news/internal/infrastructure/repo/mongo"
+	"github.com/ee-crocush/go-news/go-news/internal/infrastructure/rss"
+	"github.com/ee-crocush/go-news/go-news/internal/infrastructure/transport/httplib"
+	"github.com/ee-crocush/go-news/go-news/internal/infrastructure/transport/httplib/handler"
+	uc "github.com/ee-crocush/go-news/go-news/internal/usecase/post"
+	"github.com/ee-crocush/go-news/pkg/logger"
+	"github.com/ee-crocush/go-news/pkg/server"
+	commonFiber "github.com/ee-crocush/go-news/pkg/server/fiber"
+	"github.com/gofiber/fiber/v2"
 	"github.com/rs/zerolog"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"time"
 )
 
 // Run запускает HTTP сервер и инициализирует все необходимые компоненты.
-func Run(cfg config.Config, log *zerolog.Logger) error {
-	client, db, err := connectDB(log, cfg)
+func Run(cfg config.Config) error {
+	client, db, err := connectDB(cfg)
 	if err != nil {
 		return fmt.Errorf("failed to connect to database: %w", err)
 	}
+
+	log := logger.GetLogger()
 	defer func() {
 		if err = client.Disconnect(context.Background()); err != nil {
-			log.Error().Err(err).Msg("Failed to disconnect MongoDB")
+			fmt.Println("Failed to disconnect MongoDB: %w", err)
 		} else {
-			log.Info().Msg("MongoDB disconnected successfully")
+			fmt.Println("MongoDB disconnected successfully")
 		}
 	}()
 
@@ -35,25 +41,28 @@ func Run(cfg config.Config, log *zerolog.Logger) error {
 
 	postHandler := initHandler(postRepo)
 
-	servers, err := server.CreateServers(cfg, postHandler)
-	if err != nil {
-		return fmt.Errorf("failed to create servers: %w", err)
-	}
+	// Создаем Fiber сервер
+	fiberServer := commonFiber.NewFiberServer(
+		&cfg, func(app *fiber.App) {
+			httplib.SetupRoutes(app, postHandler)
+		},
+	)
 
-	return server.StartAll(servers...)
+	// Запускаем сервер
+	serverManager := server.NewServerManager(fiberServer)
+	return serverManager.StartAll()
 }
 
-func connectDB(log *zerolog.Logger, cfg config.Config) (*mongo.Client, *mongo.Database, error) {
+func connectDB(cfg config.Config) (*mongo.Client, *mongo.Database, error) {
 	client, db, err := repo.Init(cfg)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to initialize MongoDB: %w", err)
 	}
 
-	log.Info().
-		Str("host", cfg.MongoDB.Host).
-		Int("port", cfg.MongoDB.Port).
-		Str("database", cfg.MongoDB.Database).
-		Msg("MongoDB connected successfully!")
+	fmt.Printf(
+		"MongoDB connected successfully! host=%s, port=%d, database=%s\n", cfg.MongoDB.Host, cfg.MongoDB.Port,
+		cfg.MongoDB.Database,
+	)
 
 	return client, db, nil
 }

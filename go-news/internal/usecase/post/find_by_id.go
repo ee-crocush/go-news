@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	dom "GoNews/internal/domain/post"
+	dom "github.com/ee-crocush/go-news/go-news/internal/domain/post"
 )
 
 var _ FindByIDUContract = (*FindByIDUseCase)(nil)

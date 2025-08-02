@@ -1,7 +1,10 @@
 app:
   name: ${APP_NAME}
+  env: ${APP_ENV}
+  version: ${APP_VERSION}
   read_timeout: 10
   write_timeout: 10
+  connect_timeout: 5
   enable_request_id: true
   enable_logging: true
   enable_error_handling: true
@@ -13,4 +16,12 @@ http:
 logging:
   level: ${LOGGING_LEVEL}
   format: ${LOGGING_FORMAT}
-  enable_http_logs: ${LOGGING_ENABLE_HTTP}
+  enable_http_logs: true
+
+routes:
+  - name: go-news
+    base_url: http://go-news:8081
+    health_path: /health
+  - name: go-comments
+    base_url: http://go-comments:8082
+    health_path: /health

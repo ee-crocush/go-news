@@ -1,76 +1,79 @@
-// Package handler содержит все обработчики HTTP запросов
+// Package news содержит все обработчики HTTP запросов к сервису go-news
 package news
 
-import "github.com/gofiber/fiber/v2"
+import (
+	"fmt"
+	"github.com/ee-crocush/go-news/api-gateway/internal/infrastructure/service"
+	"github.com/gofiber/fiber/v2"
+	"io"
+	"net/http"
+	"time"
+)
 
 // Handler представляет HTTP-handler для работы с новостями через API Gateway.
 type Handler struct {
-	// В будущем здесь будут клиенты для общения с микросервисами
+	registry   service.RegistryService
+	httpClient *http.Client
 }
 
 // NewHandler создает новый экземпляр HTTP-handler.
-func NewHandler() *Handler {
-	return &Handler{}
+func NewHandler(registry service.RegistryService, timeout time.Duration) *Handler {
+	return &Handler{
+		registry:   registry,
+		httpClient: &http.Client{Timeout: timeout},
+	}
 }
 
-// FindAllHandler заглушка для получения всех новостей
-func (h *Handler) FindAllHandler(c *fiber.Ctx) error {
-	// TODO: Проксировать запрос к news-service
-	return c.JSON(
-		fiber.Map{
-			"status":   "OK",
-			"service":  "news-service-proxy",
-			"message":  "FindAll endpoint - will proxy to news-service",
-			"endpoint": "/news",
-			"data":     []interface{}{},
-		},
-	)
+// proxyRequest проксирует запросы к сервису.
+func (h *Handler) proxyRequest(c *fiber.Ctx, routeName, path string) error {
+	route, ok := h.registry.GetRouteByName(routeName)
+	if !ok {
+		return c.Status(fiber.StatusInternalServerError).JSON(
+			fiber.Map{
+				"status":  "error",
+				"message": "Service route not found",
+			},
+		)
+	}
+
+	url := route.BaseURL + path
+	resp, err := h.httpClient.Get(url)
+	if err != nil {
+		return c.Status(fiber.StatusBadGateway).JSON(
+			fiber.Map{
+				"status":  "error",
+				"message": "Failed to reach service",
+			},
+		)
+	}
+	defer resp.Body.Close()
+
+	body, _ := io.ReadAll(resp.Body)
+	return c.Status(resp.StatusCode).Send(body)
 }
 
-// FindLastHandler заглушка для получения последней новости
-func (h *Handler) FindLastHandler(c *fiber.Ctx) error {
-	// TODO: Проксировать запрос к news-service
-	return c.JSON(
-		fiber.Map{
-			"status":   "OK",
-			"service":  "news-service-proxy",
-			"message":  "FindLast endpoint - will proxy to news-service",
-			"endpoint": "/news/last",
-			"data":     nil,
-		},
-	)
+// FindAll получает все новости
+func (h *Handler) FindAll(c *fiber.Ctx) error {
+	return h.proxyRequest(c, "go-news", "/news")
 }
 
-// FindLatestHandler заглушка для получения последних n новостей
-func (h *Handler) FindLatestHandler(c *fiber.Ctx) error {
-	limit := c.Params("limit", "10") // значение по умолчанию
-
-	// TODO: Проксировать запрос к news-service
-	return c.JSON(
-		fiber.Map{
-			"status":   "OK",
-			"service":  "news-service-proxy",
-			"message":  "FindLatest endpoint - will proxy to news-service",
-			"endpoint": "/news/latest/" + limit,
-			"limit":    limit,
-			"data":     []interface{}{},
-		},
-	)
+// FindLast получает последнюю новость.
+func (h *Handler) FindLast(c *fiber.Ctx) error {
+	return h.proxyRequest(c, "go-news", "/news/last")
 }
 
-// FindByIDHandler заглушка для получения новости по ID
-func (h *Handler) FindByIDHandler(c *fiber.Ctx) error {
+// FindLatest получает последние n новости.
+func (h *Handler) FindLatest(c *fiber.Ctx) error {
+	limit := c.Params("limit", "10")
+	path := fmt.Sprintf("/news/latest/?=%s", limit)
+
+	return h.proxyRequest(c, "go-news", path)
+}
+
+// FindByID получает новость по ID.
+func (h *Handler) FindByID(c *fiber.Ctx) error {
 	id := c.Params("id")
+	path := fmt.Sprintf("/news/%s", id)
 
-	// TODO: Проксировать запрос к news-service
-	return c.JSON(
-		fiber.Map{
-			"status":   "OK",
-			"service":  "news-service-proxy",
-			"message":  "FindByID endpoint - will proxy to news-service",
-			"endpoint": "/news/" + id,
-			"id":       id,
-			"data":     nil,
-		},
-	)
+	return h.proxyRequest(c, "go-news", path)
 }

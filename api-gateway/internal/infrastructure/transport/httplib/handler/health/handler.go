@@ -1,19 +1,30 @@
+// Package health содержит обработчики жизнеспособности сервиса.
 package health
 
 import (
+	"fmt"
+	"github.com/ee-crocush/go-news/api-gateway/internal/infrastructure/service"
+	fiberServer "github.com/ee-crocush/go-news/pkg/server/fiber"
 	"github.com/gofiber/fiber/v2"
+	"net/http"
 	"time"
 )
 
 // Handler представляет HTTP-handler для проверки жизнеспособности системы.
 type Handler struct {
-	startTime time.Time
+	startTime  time.Time
+	config     fiberServer.Config
+	registry   service.RegistryService
+	httpClient *http.Client
 }
 
 // NewHandler создает новый экземпляр HTTP-handler для health checks.
-func NewHandler() *Handler {
+func NewHandler(cfg fiberServer.Config, registry service.RegistryService, timeout time.Duration) *Handler {
 	return &Handler{
-		startTime: time.Now(),
+		startTime:  time.Now(),
+		config:     cfg,
+		registry:   registry,
+		httpClient: &http.Client{Timeout: timeout},
 	}
 }
 
@@ -23,42 +34,36 @@ func (h *Handler) HealthCheckHandler(c *fiber.Ctx) error {
 
 	return c.JSON(
 		fiber.Map{
-			"status":    "OK",
-			"service":   "api-gateway",
-			"message":   "API Gateway is running",
-			"timestamp": time.Now().UTC().Format(time.RFC3339),
-			"uptime":    uptime.String(),
-			"version":   "1.0.0", // можно вынести в конфиг
+			"status":  "OK",
+			"service": h.config.GetAppName(),
+			"version": h.config.GetVersion(),
+			"uptime":  uptime.String(),
 		},
 	)
 }
 
 // ReadinessHandler проверка готовности системы (можно добавить проверки зависимостей)
 func (h *Handler) ReadinessHandler(c *fiber.Ctx) error {
-	// TODO: Добавить проверки доступности микросервисов
-	// isNewsServiceReady := h.checkNewsService()
-	// isCommentsServiceReady := h.checkCommentsService()
+	checks := make(map[string]string)
+
+	for _, route := range h.registry.GetAllRoutes() {
+		url := fmt.Sprintf("%s%s", route.BaseURL, route.HealthPath)
+
+		resp, err := h.httpClient.Get(url)
+		if err != nil || resp.StatusCode >= 400 {
+			checks[route.Name] = "unhealthy"
+			continue
+		}
+
+		checks[route.Name] = "healthy"
+	}
 
 	return c.JSON(
 		fiber.Map{
 			"status":  "OK",
-			"service": "api-gateway",
-			"message": "API Gateway is ready",
-			"checks": fiber.Map{
-				"news_service":     "not_implemented", // TODO: реальная проверка
-				"comments_service": "not_implemented", // TODO: реальная проверка
-			},
-		},
-	)
-}
-
-// LivenessHandler проверка живости системы
-func (h *Handler) LivenessHandler(c *fiber.Ctx) error {
-	return c.JSON(
-		fiber.Map{
-			"status":  "OK",
-			"service": "api-gateway",
-			"message": "API Gateway is alive",
+			"service": h.config.GetAppName(),
+			"message": "All services is ready",
+			"checks":  checks,
 		},
 	)
 }

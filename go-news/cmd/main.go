@@ -2,10 +2,10 @@
 package main
 
 import (
-	"GoNews/internal/app"
-	"GoNews/internal/infrastructure/config"
-	"GoNews/pkg/logger"
 	"fmt"
+	"github.com/ee-crocush/go-news/go-news/internal/app"
+	"github.com/ee-crocush/go-news/go-news/internal/infrastructure/config"
+	"github.com/ee-crocush/go-news/pkg/logger"
 )
 
 func main() {
@@ -18,9 +18,8 @@ func main() {
 	}
 
 	logger.InitLogger(cfg.App.Name)
-	log := logger.GetLogger()
 
-	if err = app.Run(cfg, log); err != nil {
-		log.Fatal().Err(err).Msg("Service failed to start")
+	if err = app.Run(cfg); err != nil {
+		fmt.Println("service failed to start:", err)
 	}
 }

@@ -14,6 +14,7 @@ import (
 // Config - интерфейс для передачи конфигурации Fiber.
 type Config interface {
 	GetAppName() string
+	GetVersion() string
 	GetHost() string
 	GetPort() int
 	GetReadTimeout() time.Duration

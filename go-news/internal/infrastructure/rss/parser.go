@@ -2,9 +2,9 @@
 package rss
 
 import (
-	uc "GoNews/internal/usecase/post"
 	"encoding/xml"
 	"fmt"
+	uc "github.com/ee-crocush/go-news/go-news/internal/usecase/post"
 	strip "github.com/grokify/html-strip-tags-go"
 	"io"
 	"net/http"

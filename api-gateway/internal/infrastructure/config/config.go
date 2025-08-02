@@ -1,3 +1,4 @@
+// Package config содержит конфигурацию приложения.
 package config
 
 import (
@@ -5,6 +6,7 @@ import (
 	"github.com/go-playground/validator"
 	"github.com/joho/godotenv"
 	"gopkg.in/yaml.v3"
+	"net/url"
 	"os"
 	"time"
 )
@@ -12,8 +14,11 @@ import (
 // AppConfig - конфигурация приложения.
 type AppConfig struct {
 	Name                string `yaml:"name" validate:"required"`
+	Env                 string `yaml:"env" validate:"required"`
+	Version             string `yaml:"version" validate:"required"`
 	ReadTimeout         int    `yaml:"read_timeout" validate:"required"`
 	WriteTimeout        int    `yaml:"write_timeout" validate:"required"`
+	ConnectTimeout      int    `yaml:"connect_timeout" validate:"required"`
 	EnableRequestID     bool   `yaml:"enable_request_id" validate:"required"`
 	EnableLogging       bool   `yaml:"enable_logging" validate:"required"`
 	EnableErrorHandling bool   `yaml:"enable_error_handling" validate:"required"`
@@ -32,15 +37,31 @@ type LoggingConfig struct {
 	EnableHTTPLogs bool   `yaml:"enable_http_logs" validate:"required"`
 }
 
+// Route - конфигурация сервисов для роутинга и проверки состояния.
+type Route struct {
+	Name       string `yaml:"name" validate:"required"`
+	BaseURL    string `yaml:"base_url" validate:"required"`
+	HealthPath string `yaml:"health_path" validate:"required"`
+}
+
 // Config основная конфигурация.
 type Config struct {
 	App     AppConfig     `yaml:"app"`
 	HTTP    HTTPConfig    `yaml:"http"`
 	Logging LoggingConfig `yaml:"logging"`
+	Routes  []Route       `yaml:"routes"`
+}
+
+func (c *Config) IsDevelopment() bool {
+	return c.App.Env == "dev"
 }
 
 func (c *Config) GetAppName() string {
 	return c.App.Name
+}
+
+func (c *Config) GetVersion() string {
+	return c.App.Version
 }
 
 func (c *Config) GetHost() string {
@@ -83,15 +104,16 @@ func (c *Config) Validate() error {
 }
 
 // LoadConfig загружает конфиг из файла.
-func LoadConfig(configPath string) (Config, error) {
-	err := godotenv.Load("./api-gateway/.env")
-	if err != nil {
-		return Config{}, fmt.Errorf("error loading .env file: %w", err)
+func LoadConfig(configPath string) (*Config, error) {
+	if err := godotenv.Load(); err != nil {
+		if err = godotenv.Load("./api-gateway/.env"); err != nil {
+			return nil, fmt.Errorf("error loading .env file: %w", err)
+		}
 	}
 
 	raw, err := os.ReadFile(configPath)
 	if err != nil {
-		return Config{}, fmt.Errorf("read config file: %w", err)
+		return nil, fmt.Errorf("read config file: %w", err)
 	}
 
 	// Подставляем переменные окружения
@@ -100,12 +122,39 @@ func LoadConfig(configPath string) (Config, error) {
 	// Парсим YAML
 	var cfg Config
 	if err = yaml.Unmarshal([]byte(expanded), &cfg); err != nil {
-		return Config{}, fmt.Errorf("parse config yaml: %w", err)
+		return nil, fmt.Errorf("parse config yaml: %w", err)
 	}
 
 	if err = cfg.Validate(); err != nil {
-		return Config{}, fmt.Errorf("config validation failed: %w", err)
+		return nil, fmt.Errorf("config validation failed: %w", err)
 	}
 
-	return cfg, nil
+	cfg.overrideRoutesForDev()
+
+	return &cfg, nil
+}
+
+// overrideRoutesForDev переписывает пути для локальной разработки.
+// Если переменная окружения APP_ENV равна "dev", то для всех роутов
+// BaseURL будет изменен на http://localhost:<port>.
+// Например, если BaseURL был "http://example.com:8080",
+// то он станет "http://localhost:8080".
+func (c *Config) overrideRoutesForDev() {
+	if c.App.Env != "dev" {
+		return
+	}
+
+	for i, route := range c.Routes {
+		u, err := url.Parse(route.BaseURL)
+		if err != nil {
+			continue
+		}
+
+		port := u.Port()
+		if port == "" {
+			port = "80"
+		}
+
+		c.Routes[i].BaseURL = fmt.Sprintf("http://localhost:%s", port)
+	}
 }

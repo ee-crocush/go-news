@@ -2,8 +2,8 @@
 package handler
 
 import (
-	uc "GoNews/internal/usecase/post"
 	"context"
+	uc "github.com/ee-crocush/go-news/go-news/internal/usecase/post"
 )
 
 // FindByIDPostExecutor интерфейс для поиска новости по ID.

@@ -9,17 +9,31 @@ import (
 )
 
 func main() {
-	configPath := "./api-gateway/configs/dev.yaml"
-	cfg, err := config.LoadConfig(configPath)
-	if err != nil {
-		fmt.Println("failed to load config:", err)
+	paths := []string{
+		"./configs/dev.yaml",
+		"./api-gateway/configs/dev.yaml",
+	}
+
+	var (
+		cfg *config.Config
+		err error
+	)
+
+	for _, path := range paths {
+		cfg, err = config.LoadConfig(path)
+		if err == nil {
+			break
+		}
+	}
+
+	if err != nil || cfg == nil {
+		fmt.Println("failed to load config from all known paths:", err)
 		return
 	}
 
 	logger.InitLogger(cfg.App.Name)
 	if err = app.Run(cfg); err != nil {
 		fmt.Println("service failed to start:", err)
-		//log.Fatal().Err(err).Msg("Service failed to start")
 		return
 	}
 }

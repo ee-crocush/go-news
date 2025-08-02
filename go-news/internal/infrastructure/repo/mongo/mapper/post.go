@@ -2,8 +2,8 @@
 package mapper
 
 import (
-	dom "GoNews/internal/domain/post"
 	"fmt"
+	dom "github.com/ee-crocush/go-news/go-news/internal/domain/post"
 )
 
 // PostDocument - структура для маппинга новости из Mongo.

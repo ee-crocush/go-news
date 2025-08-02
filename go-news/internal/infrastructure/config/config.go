@@ -14,6 +14,7 @@ import (
 // AppConfig - конфигурация приложения.
 type AppConfig struct {
 	Name                string `yaml:"name" validate:"required"`
+	Version             string `yaml:"version" validate:"required"`
 	ReadTimeout         int    `yaml:"read_timeout" validate:"required"`
 	WriteTimeout        int    `yaml:"write_timeout" validate:"required"`
 	EnableRequestID     bool   `yaml:"enable_request_id" validate:"required"`
@@ -86,6 +87,42 @@ type Config struct {
 	RSS     RSSConfig     `json:"-"`
 }
 
+func (c *Config) GetAppName() string {
+	return c.App.Name
+}
+
+func (c *Config) GetVersion() string {
+	return c.App.Version
+}
+
+func (c *Config) GetHost() string {
+	return c.HTTP.Host
+}
+
+func (c *Config) GetPort() int {
+	return c.HTTP.Port
+}
+
+func (c *Config) GetReadTimeout() time.Duration {
+	return time.Duration(c.App.ReadTimeout) * time.Second
+}
+
+func (c *Config) GetWriteTimeout() time.Duration {
+	return time.Duration(c.App.WriteTimeout) * time.Second
+}
+
+func (c *Config) EnableRequestID() bool {
+	return c.App.EnableRequestID
+}
+
+func (c *Config) EnableLogging() bool {
+	return c.App.EnableLogging
+}
+
+func (c *Config) EnableErrorHandling() bool {
+	return c.App.EnableErrorHandling
+}
+
 // Validate валидация конфига.
 func (c *Config) Validate() error {
 	validate := validator.New()
@@ -99,9 +136,10 @@ func (c *Config) Validate() error {
 
 // LoadConfig загружает конфиг из файла.
 func LoadConfig(configPath, rssConfigPath string) (Config, error) {
-	err := godotenv.Load()
-	if err != nil {
-		return Config{}, fmt.Errorf("error loading .env file: %w", err)
+	if err := godotenv.Load(); err != nil {
+		if err = godotenv.Load("./go-news/.env"); err != nil {
+			return Config{}, fmt.Errorf("error loading .env file: %w", err)
+		}
 	}
 
 	raw, err := os.ReadFile(configPath)

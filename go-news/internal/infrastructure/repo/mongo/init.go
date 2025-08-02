@@ -2,9 +2,9 @@
 package mongo
 
 import (
-	"GoNews/internal/infrastructure/config"
 	"context"
 	"fmt"
+	"github.com/ee-crocush/go-news/go-news/internal/infrastructure/config"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
 	"go.mongodb.org/mongo-driver/v2/mongo/readpref"

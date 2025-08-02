@@ -1,10 +1,10 @@
 package mongo
 
 import (
-	dom "GoNews/internal/domain/post"
-	"GoNews/internal/infrastructure/repo/mongo/mapper"
 	"context"
 	"fmt"
+	dom "github.com/ee-crocush/go-news/go-news/internal/domain/post"
+	"github.com/ee-crocush/go-news/go-news/internal/infrastructure/repo/mongo/mapper"
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"

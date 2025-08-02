@@ -2,8 +2,8 @@
 package post
 
 import (
-	dom "GoNews/internal/domain/post"
 	"fmt"
+	dom "github.com/ee-crocush/go-news/go-news/internal/domain/post"
 	"net/url"
 )
 
