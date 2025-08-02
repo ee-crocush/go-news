@@ -22,6 +22,7 @@ type AppConfig struct {
 	EnableRequestID     bool   `yaml:"enable_request_id" validate:"required"`
 	EnableLogging       bool   `yaml:"enable_logging" validate:"required"`
 	EnableErrorHandling bool   `yaml:"enable_error_handling" validate:"required"`
+	EnableCors          bool   `yaml:"enable_cors" validate:"required"`
 }
 
 // HTTPConfig - конфигурация HTTP сервера.
@@ -90,6 +91,10 @@ func (c *Config) EnableLogging() bool {
 
 func (c *Config) EnableErrorHandling() bool {
 	return c.App.EnableErrorHandling
+}
+
+func (c *Config) EnableCors() bool {
+	return c.App.EnableCors
 }
 
 // Validate валидация конфига.

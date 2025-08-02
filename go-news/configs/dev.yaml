@@ -6,6 +6,7 @@ app:
   enable_request_id: true
   enable_logging: true
   enable_error_handling: true
+  enable_cors: false
 
 http:
   host: ${HTTP_HOST}

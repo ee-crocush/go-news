@@ -5,6 +5,7 @@ import (
 	"context"
 	"github.com/ee-crocush/go-news/pkg/logger"
 	mw "github.com/ee-crocush/go-news/pkg/middleware"
+	"github.com/gofiber/fiber/v2/middleware/cors"
 
 	"fmt"
 	"github.com/gofiber/fiber/v2"
@@ -22,6 +23,7 @@ type Config interface {
 	EnableRequestID() bool
 	EnableLogging() bool
 	EnableErrorHandling() bool
+	EnableCors() bool
 }
 
 // RouteSetup функция для настройки маршрутов.
@@ -55,6 +57,17 @@ func NewFiberApp(config Config) *fiber.App {
 
 	if config.EnableErrorHandling() {
 		app.Use(mw.ErrorHandlerMiddleware())
+	}
+
+	if config.EnableCors() {
+		app.Use(
+			cors.New(
+				cors.Config{
+					AllowOrigins: "http://localhost, http://127.0.0.1",
+					AllowHeaders: "Origin, Content-Type, Accept, Authorization",
+				},
+			),
+		)
 	}
 
 	return app
