@@ -1,7 +1,7 @@
 package handler
 
-// PostItem представляет пост в массиве постов.
-type PostItem struct {
+// CommentItem представляет комментарий в массиве комментариев.
+type CommentItem struct {
 	ID      int32  `json:"id"`
 	Title   string `json:"title"`
 	Content string `json:"content"`

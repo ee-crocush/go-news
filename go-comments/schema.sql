@@ -1,6 +1,7 @@
 DROP TABLE IF EXISTS comments;
 CREATE TABLE comments (
     id BIGSERIAL PRIMARY KEY,
+    news_id INT NOT NULL,
     parent_id BIGINT,
     user_name TEXT NOT NULL,
     content TEXT NOT NULL,

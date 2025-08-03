@@ -21,6 +21,22 @@ func (c ID) Value() int64 { return c.value }
 // Equal сравнивает два идентификатора.
 func (c ID) Equal(other ID) bool { return c.value == other.value }
 
+// NewsID - идентификатор новости.
+type NewsID struct {
+	value int32
+}
+
+// Value возвращает значение идентификатора комментария.
+func (c NewsID) Value() int32 { return c.value }
+
+// NewNewsID создает новый идентификатор новости.
+func NewNewsID(id int32) (NewsID, error) {
+	if id < 1 {
+		return NewsID{}, ErrInvalidNewsID
+	}
+	return NewsID{value: id}, nil
+}
+
 // ParentID - идентификатор родительского комментария.
 type ParentID struct {
 	value *int64

@@ -26,8 +26,8 @@ import (
 // @schemes http
 func main() {
 	paths := []string{
-		"./configs/dev.yaml",
-		"./api-gateway/configs/dev.yaml",
+		"./configs/config.yaml",
+		"./api-gateway/configs/config.yaml",
 	}
 
 	var (

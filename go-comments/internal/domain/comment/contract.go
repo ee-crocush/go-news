@@ -12,6 +12,6 @@ type Creator interface {
 type Finder interface {
 	// FindByID получает комментарий по ID.
 	FindByID(ctx context.Context, id ID) (*Comment, error)
-	// FindAll получает все комментарии.
-	FindAll(ctx context.Context) ([]*Comment, error)
+	// FindAllByNewsID получает все комментарии для конкрентой новости.
+	FindAllByNewsID(ctx context.Context, newsID NewsID) ([]*Comment, error)
 }

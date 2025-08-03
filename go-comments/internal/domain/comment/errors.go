@@ -5,6 +5,8 @@ import "errors"
 var (
 	// ErrInvalidCommentID представляет ошибку невалидного идентификатора комментария.
 	ErrInvalidCommentID = errors.New("invalid comment ID")
+	// ErrInvalidNewsID представляет ошибку невалидного идентификатора новости.
+	ErrInvalidNewsID = errors.New("invalid news ID")
 	// ErrInvalidParentID представляет ошибку невалидного идентификатора родительского комментария.
 	ErrInvalidParentID = errors.New("invalid parent ID")
 	// ErrEmptyContent представляет ошибку незаполненного содержимого комментария.

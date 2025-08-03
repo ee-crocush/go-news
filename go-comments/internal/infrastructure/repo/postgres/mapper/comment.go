@@ -9,6 +9,7 @@ import (
 // CommentRow - структура для маппинга комментария из PostgreSQL.
 type CommentRow struct {
 	ID       int64  `json:"id"`
+	NewsID   int32  `json:"news_id"`
 	ParentID *int64 `json:"parent_id,omitempty"`
 	Username string `json:"username"`
 	Content  string `json:"content"`
@@ -20,6 +21,11 @@ func MapRowToComment(row CommentRow) (*dom.Comment, error) {
 	id, err := dom.NewID(row.ID)
 	if err != nil {
 		return nil, fmt.Errorf("MapRowToComment.NewID: %w", err)
+	}
+
+	newsID, err := dom.NewNewsID(row.NewsID)
+	if err != nil {
+		return nil, fmt.Errorf("MapRowToComment.NewNewsID: %w", err)
 	}
 
 	username, err := dom.NewUserName(row.Username)
@@ -47,5 +53,5 @@ func MapRowToComment(row CommentRow) (*dom.Comment, error) {
 		}
 	}
 
-	return dom.RehydrateComment(id, parentID, username, content, pubTime), nil
+	return dom.RehydrateComment(id, newsID, parentID, username, content, pubTime), nil
 }

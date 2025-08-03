@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	configPath := "./configs/dev.yaml"
+	configPath := "./configs/config.yaml"
 	rssConfigPath := "./configs/rss_config.json"
 	cfg, err := config.LoadConfig(configPath, rssConfigPath)
 	if err != nil {

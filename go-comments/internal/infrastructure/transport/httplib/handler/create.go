@@ -1,19 +1,21 @@
 package handler
 
 import (
-	uc "github.com/ee-crocush/go-news/go-news/internal/usecase/post"
+	uc "github.com/ee-crocush/go-news/go-comments/internal/domain/comment"
 	"github.com/ee-crocush/go-news/pkg/api"
 	"github.com/gofiber/fiber/v2"
 	"strconv"
 )
 
-// FindByIdRequest - входные данные из тела запроса для получения новости по ID.
-type FindByIdRequest struct {
+// TODO: 2025-08-04 Mogush E.E.: Закончить роуты
+
+// CreateRequest - входные данные из тела запроса для создания комментария.
+type CreateRequest struct {
 	ID int32 `json:"id"`
 }
 
-// FindByIdRequestResponse представляет выходной DTO поста.
-type FindByIdRequestResponse struct {
+// CreateRequestResponse представляет выходной DTO поста.
+type CreateRequestResponse struct {
 	ID      int32  `json:"id"`
 	Title   string `json:"title"`
 	Content string `json:"content"`
@@ -42,7 +44,7 @@ func (h *Handler) FindByIDHandler(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(api.Err(err))
 	}
 
-	resp := FindByIdRequestResponse{
+	resp := CreateRequestResponse{
 		ID:      out.ID,
 		Title:   out.Title,
 		Content: out.Content,
