@@ -58,3 +58,10 @@
 - **Контейнеризация:** Docker
 - **Оркестрация:** Kubernetes
 - **Reverse Proxy:** Nginx (для статики и проксирования API запросов)
+
+## Инструкции по запуску
+
+### Локальный запуск
+
+1. **Клонирование репозитория:**git clone https://github.com/your_username/news-aggregator.git
+   cd news-aggregator

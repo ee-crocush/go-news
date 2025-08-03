@@ -1,0 +1,32 @@
+app:
+  name: ${APP_NAME}
+  version: ${APP_VERSION}
+  read_timeout: 10
+  write_timeout: 10
+  enable_request_id: true
+  enable_logging: true
+  enable_error_handling: true
+  enable_cors: false
+
+http:
+  host: ${HTTP_HOST}
+  port: ${HTTP_PORT}
+
+database:
+  host: ${DB_HOST}
+  port: ${DB_PORT}
+  user: ${DB_USER}
+  password: ${DB_PASSWORD}
+  name: ${DB_NAME}
+  migrations: ./migrations
+  sslmode: disable
+  pool_max_conns: 20
+  pool_min_conns: 5
+  pool_max_conn_lifetime: 1h
+  pool_max_conn_idle_time: 30m
+  connect_timeout: 10s
+
+logging:
+  level: ${LOGGING_LEVEL}
+  format: ${LOGGING_FORMAT}
+  enable_http_logs: true
