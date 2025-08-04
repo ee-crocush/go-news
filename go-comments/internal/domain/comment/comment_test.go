@@ -10,6 +10,7 @@ import (
 func TestNewComment(t *testing.T) {
 	tests := []struct {
 		name     string
+		newsID   int32
 		username string
 		content  string
 		pubTime  int64
@@ -19,6 +20,7 @@ func TestNewComment(t *testing.T) {
 		{
 			name:     "valid comment with parentID",
 			username: "username",
+			newsID:   1,
 			content:  "Test Content",
 			pubTime:  time.Now().Unix(),
 			wantErr:  false,
@@ -26,6 +28,7 @@ func TestNewComment(t *testing.T) {
 		{
 			name:     "valid comment without parentID",
 			username: "username",
+			newsID:   1,
 			content:  "Test Content",
 			pubTime:  time.Now().Unix(),
 			wantErr:  false,
@@ -33,6 +36,7 @@ func TestNewComment(t *testing.T) {
 		{
 			name:     "empty username",
 			username: "",
+			newsID:   1,
 			content:  "Test Content",
 			pubTime:  time.Now().Unix(),
 			wantErr:  true,
@@ -41,17 +45,27 @@ func TestNewComment(t *testing.T) {
 		{
 			name:     "empty content",
 			username: "username",
+			newsID:   1,
 			content:  "",
 			pubTime:  time.Now().Unix(),
 			wantErr:  true,
 			errType:  ErrEmptyContent,
+		},
+		{
+			name:     "empty news id",
+			username: "username",
+			newsID:   0,
+			content:  "dasdada",
+			pubTime:  time.Now().Unix(),
+			wantErr:  true,
+			errType:  ErrInvalidNewsID,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(
 			tt.name, func(t *testing.T) {
-				comment, err := NewComment(tt.username, tt.content)
+				comment, err := NewComment(tt.newsID, tt.username, tt.content)
 
 				if tt.wantErr {
 					if err == nil {
@@ -80,24 +94,30 @@ func TestNewComment(t *testing.T) {
 
 func TestNewComment_ErrorMessages(t *testing.T) {
 	// Проверяем, что ошибки правильно оборачиваются
-	_, err := NewComment("", "content")
+	_, err := NewComment(1, "", "content")
 	if !errors.Is(err, ErrWrongLengthUserName) {
 		t.Errorf("expected ErrWrongLengthUserName, got %v", err)
 	}
 
-	_, err = NewComment("username", "")
+	_, err = NewComment(1, "username", "")
 	if !errors.Is(err, ErrEmptyContent) {
 		t.Errorf("expected ErrEmptyContent, got %v", err)
+	}
+
+	_, err = NewComment(0, "username", "")
+	if !errors.Is(err, ErrInvalidNewsID) {
+		t.Errorf("expected ErrInvalidNewsID, got %v", err)
 	}
 }
 
 func TestComment_Getters(t *testing.T) {
 	// Создаем тестовый коммент
+	newsId := int32(1)
 	username := "username"
 	content := "Test Content"
 	pubTime := time.Now().Unix()
 
-	comment, err := NewComment(username, content)
+	comment, err := NewComment(newsId, username, content)
 	if err != nil {
 		t.Fatalf("Failed to create test comment: %v", err)
 	}
@@ -123,7 +143,7 @@ func TestComment_Getters(t *testing.T) {
 }
 
 func TestComment_SetID(t *testing.T) {
-	comment, err := NewComment("username", "Content")
+	comment, err := NewComment(1, "username", "Content")
 	if err != nil {
 		t.Fatalf("Failed to create test comment: %v", err)
 	}
@@ -160,6 +180,11 @@ func TestRehydrateComment(t *testing.T) {
 		t.Fatalf("Failed to create CommentID: %v", err)
 	}
 
+	NewsId, err := NewNewsID(1)
+	if err != nil {
+		t.Fatalf("Failed to create NewsId: %v", err)
+	}
+
 	parentID, err := NewParentID(1)
 	if err != nil {
 		t.Fatalf("Failed to create parentID: %v", err)
@@ -182,7 +207,7 @@ func TestRehydrateComment(t *testing.T) {
 	}
 
 	// Тестируем RehydrateComment
-	comment := RehydrateComment(id, parentID, username, content, pubTime)
+	comment := RehydrateComment(id, NewsId, parentID, username, content, pubTime)
 
 	if comment == nil {
 		t.Fatal("RehydrateComment() returned nil")
@@ -210,13 +235,14 @@ func TestRehydrateComment_WithZeroValues(t *testing.T) {
 	// Тестируем RehydrateComment с нулевыми значениями
 	var (
 		id       ID
+		newsID   NewsID
 		parentID ParentID
 		username UserName
 		content  Content
 		pubTime  PubTime
 	)
 
-	comment := RehydrateComment(id, parentID, username, content, pubTime)
+	comment := RehydrateComment(id, newsID, parentID, username, content, pubTime)
 
 	if comment == nil {
 		t.Fatal("RehydrateComment() returned nil")
@@ -225,6 +251,9 @@ func TestRehydrateComment_WithZeroValues(t *testing.T) {
 	// Проверяем, что все поля установлены (даже если они нулевые)
 	if comment.ID().Value() != 0 {
 		t.Errorf("ID() = %v, want 0", comment.ID().Value())
+	}
+	if comment.NewsID().Value() != 0 {
+		t.Errorf("ID() = %v, want 0", comment.NewsID().Value())
 	}
 	if comment.ParentID().Value() != nil {
 		t.Errorf("ID() = %v, want nil", comment.ParentID().Value())
@@ -257,6 +286,6 @@ func isErrorInChain(err, target error) bool {
 	return false
 }
 
-func ptr[T any](v T) *T {
-	return &v
-}
+//func ptr[T any](v T) *T {
+//	return &v
+//}
