@@ -40,7 +40,6 @@ func Run(cfg config.Config) error {
 	go startRSSBackgroundJob(cfg, postStoreUC, log)
 
 	postHandler := initHandler(postRepo)
-
 	// Создаем Fiber сервер
 	fiberServer := commonFiber.NewFiberServer(
 		&cfg, func(app *fiber.App) {
@@ -67,11 +66,11 @@ func connectDB(cfg config.Config) (*mongo.Client, *mongo.Database, error) {
 	return client, db, nil
 }
 
-func initHandler(repo *repo.PostRepository) *handler.Handler {
-	findByIDUC := uc.NewFindByIDUseCase(repo)
-	findLastUC := uc.NewFindLastUseCase(repo)
-	findLatestUC := uc.NewFindLatestUseCase(repo)
-	findAllUC := uc.NewFindAllUseCase(repo)
+func initHandler(repos *repo.PostRepository) *handler.Handler {
+	findByIDUC := uc.NewFindByIDUseCase(repos)
+	findLastUC := uc.NewFindLastUseCase(repos)
+	findLatestUC := uc.NewFindLatestUseCase(repos)
+	findAllUC := uc.NewFindAllUseCase(repos)
 
 	return handler.NewHandler(findByIDUC, findLastUC, findLatestUC, findAllUC)
 }

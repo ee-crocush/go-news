@@ -3,48 +3,32 @@ package handler
 
 import (
 	"context"
-	uc "github.com/ee-crocush/go-news/go-news/internal/usecase/post"
+	uc "github.com/ee-crocush/go-news/go-comments/internal/usecase/comment"
+	"github.com/go-playground/validator/v10"
 )
 
-// FindByIDPostExecutor интерфейс для поиска новости по ID.
-type FindByIDPostExecutor interface {
-	Execute(ctx context.Context, in uc.FindByIDInputDTO) (uc.PostDTO, error)
+var validate = validator.New()
+
+// CreateCommentExecutor интерфейс для создания комментария.
+type CreateCommentExecutor interface {
+	Execute(ctx context.Context, in uc.CommentDTO) error
 }
 
-// FindLastPostExecutor интерфейс для поиска последней новости.
-type FindLastPostExecutor interface {
-	Execute(ctx context.Context) (uc.PostDTO, error)
+// FindAllByNewsExecutor интерфейс для поиска всех комментариев для заданной новости.
+type FindAllByNewsExecutor interface {
+	Execute(ctx context.Context, in uc.AllByNewsIDDTO) ([]uc.CommentDTO, error)
 }
 
-// FindLatestPostExecutor интерфейс для поиска последних n новостей.
-type FindLatestPostExecutor interface {
-	Execute(ctx context.Context, in uc.FindLatestInputDTO) ([]uc.PostDTO, error)
-}
-
-// FindAllPostExecutor интерфейс для поиска всех новостей.
-type FindAllPostExecutor interface {
-	Execute(ctx context.Context) ([]uc.PostDTO, error)
-}
-
-// Handler представляет HTTP-handler для работы с новостями.
+// Handler представляет HTTP-handler для работы с комментариями.
 type Handler struct {
-	findByIDUC   FindByIDPostExecutor
-	findLastUC   FindLastPostExecutor
-	findLatestUC FindLatestPostExecutor
-	findAllUC    FindAllPostExecutor
+	createUC        CreateCommentExecutor
+	findAllByNewsUC FindAllByNewsExecutor
 }
 
 // NewHandler создает новый экземпляр HTTP-handler.
-func NewHandler(
-	findByIDUC FindByIDPostExecutor,
-	findLastUC FindLastPostExecutor,
-	findLatestUC FindLatestPostExecutor,
-	findAllUC FindAllPostExecutor,
-) *Handler {
+func NewHandler(createUC CreateCommentExecutor, findAllByNewsUC FindAllByNewsExecutor) *Handler {
 	return &Handler{
-		findByIDUC:   findByIDUC,
-		findLastUC:   findLastUC,
-		findLatestUC: findLatestUC,
-		findAllUC:    findAllUC,
+		createUC:        createUC,
+		findAllByNewsUC: findAllByNewsUC,
 	}
 }

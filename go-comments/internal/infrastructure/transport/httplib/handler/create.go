@@ -1,56 +1,55 @@
 package handler
 
 import (
-	uc "github.com/ee-crocush/go-news/go-comments/internal/domain/comment"
+	uc "github.com/ee-crocush/go-news/go-comments/internal/usecase/comment"
 	"github.com/ee-crocush/go-news/pkg/api"
+	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
-	"strconv"
 )
-
-// TODO: 2025-08-04 Mogush E.E.: Закончить роуты
 
 // CreateRequest - входные данные из тела запроса для создания комментария.
 type CreateRequest struct {
-	ID int32 `json:"id"`
+	NewsID   int32  `json:"news_id" validate:"required,gt=0"`
+	ParentID *int64 `json:"parent_id,omitempty"`
+	Username string `json:"username" validate:"required,min=6,max=50"`
+	Content  string `json:"content" validate:"required,min=1"`
 }
 
-// CreateRequestResponse представляет выходной DTO поста.
+// CreateRequestResponse представляет выходной данные запроса.
 type CreateRequestResponse struct {
-	ID      int32  `json:"id"`
-	Title   string `json:"title"`
-	Content string `json:"content"`
-	Link    string `json:"link"`
-	PubTime string `json:"pub_time"`
+	Status  string `json:"status"`
+	Message string `json:"message"`
 }
 
-// FindByIDHandler обрабатывает запрос (GET /news/<id>).
-func (h *Handler) FindByIDHandler(c *fiber.Ctx) error {
-	idParam := c.Params("id")
-	if idParam == "" {
+// CreateHandler обрабатывает запрос на создание нового комментария (Post /comments).
+func (h *Handler) CreateHandler(c *fiber.Ctx) error {
+	var req CreateRequest
+
+	if err := c.BodyParser(&req); err != nil {
 		return c.Status(fiber.StatusBadRequest).
-			JSON(api.ErrWithCode("missing-id", "missing post ID in URL"))
+			JSON(api.ErrWithCode("invalid-body", "Invalid request body"))
 	}
 
-	id, err := strconv.Atoi(idParam)
-	if err != nil || id <= 0 {
-		return c.Status(fiber.StatusBadRequest).
-			JSON(api.ErrWithCode("invalid-id", "post ID must be positive integer"))
+	if err := validate.Struct(req); err != nil {
+		validationErrors := err.(validator.ValidationErrors)
+		return c.Status(fiber.StatusBadRequest).JSON(api.ErrWithCode("validation-error", validationErrors.Error()))
 	}
 
-	in := uc.FindByIDInputDTO{ID: int32(id)}
-	out, err := h.findByIDUC.Execute(c.Context(), in)
+	dto := uc.CommentDTO{
+		NewsID:   req.NewsID,
+		ParentID: req.ParentID,
+		Username: req.Username,
+		Content:  req.Content,
+	}
 
-	if err != nil {
+	if err := h.createUC.Execute(c.Context(), dto); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(api.Err(err))
 	}
 
-	resp := CreateRequestResponse{
-		ID:      out.ID,
-		Title:   out.Title,
-		Content: out.Content,
-		Link:    out.Link,
-		PubTime: out.PubTime,
+	response := CreateRequestResponse{
+		Status:  "OK",
+		Message: "Comment created successfully",
 	}
 
-	return c.Status(fiber.StatusOK).JSON(api.Resp(resp))
+	return c.Status(fiber.StatusCreated).JSON(api.Resp(response))
 }

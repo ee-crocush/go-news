@@ -42,10 +42,10 @@ func (r *CommentRepository) Create(ctx context.Context, comment *dom.Comment) er
 func (r *CommentRepository) FindByID(ctx context.Context, id dom.ID) (*dom.Comment, error) {
 	var row mapper.CommentRow
 
-	const query = `SELECT id, parent_id, user_name, content, pub_time FROM comments WHERE id=$1 LIMIT 1`
+	const query = `SELECT id, news_id, parent_id, user_name, content, pub_time FROM comments WHERE id=$1 LIMIT 1`
 
 	err := r.pool.QueryRow(ctx, query, id.Value()).Scan(
-		&row.ID, &row.ParentID, &row.Username, &row.Content, &row.PubTime,
+		&row.ID, &row.NewsID, &row.ParentID, &row.Username, &row.Content, &row.PubTime,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("CommentRepository.FindByID: %w", err)
@@ -75,7 +75,9 @@ func (r *CommentRepository) FindAllByNewsID(ctx context.Context, newsID dom.News
 	for rows.Next() {
 		var row mapper.CommentRow
 
-		if err = rows.Scan(&row.ID, &row.ParentID, &row.Username, &row.Content, &row.PubTime); err != nil {
+		if err = rows.Scan(
+			&row.ID, &row.NewsID, &row.ParentID, &row.Username, &row.Content, &row.PubTime,
+		); err != nil {
 			return nil, fmt.Errorf("CommentRepository.FindAll: %w", err)
 		}
 

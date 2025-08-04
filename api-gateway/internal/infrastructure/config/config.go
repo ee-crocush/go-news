@@ -3,7 +3,7 @@ package config
 
 import (
 	"fmt"
-	"github.com/go-playground/validator"
+	"github.com/go-playground/validator/v10"
 	"github.com/joho/godotenv"
 	"gopkg.in/yaml.v3"
 	"net/url"

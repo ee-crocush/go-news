@@ -8,7 +8,7 @@ import (
 func (h *Handler) HealthCheckHandler(c *fiber.Ctx) error {
 	err := c.Status(fiber.StatusOK).JSON(
 		fiber.Map{
-			"status":  "ok",
+			"status":  "OK",
 			"message": "Service is healthy",
 		},
 	)

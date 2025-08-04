@@ -2,7 +2,7 @@ package config
 
 import (
 	"fmt"
-	"github.com/go-playground/validator"
+	"github.com/go-playground/validator/v10"
 	"github.com/joho/godotenv"
 	"gopkg.in/yaml.v3"
 	"net/url"
@@ -123,9 +123,9 @@ func (c *Config) Validate() error {
 }
 
 // LoadConfig загружает конфиг из файла.
-func LoadConfig(configPath, rssConfigPath string) (Config, error) {
+func LoadConfig(configPath string) (Config, error) {
 	if err := godotenv.Load(); err != nil {
-		if err = godotenv.Load("./go-news/.env"); err != nil {
+		if err = godotenv.Load("./go-comments/.env"); err != nil {
 			return Config{}, fmt.Errorf("error loading .env file: %w", err)
 		}
 	}
