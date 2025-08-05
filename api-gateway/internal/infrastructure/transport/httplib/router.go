@@ -4,9 +4,8 @@ package httplib
 import (
 	_ "github.com/ee-crocush/go-news/api-gateway/docs"
 	"github.com/ee-crocush/go-news/api-gateway/internal/infrastructure/service"
-	"github.com/ee-crocush/go-news/api-gateway/internal/infrastructure/transport/httplib/handler/comments"
+	"github.com/ee-crocush/go-news/api-gateway/internal/infrastructure/transport/httplib/handler"
 	"github.com/ee-crocush/go-news/api-gateway/internal/infrastructure/transport/httplib/handler/health"
-	"github.com/ee-crocush/go-news/api-gateway/internal/infrastructure/transport/httplib/handler/news"
 	fiberServer "github.com/ee-crocush/go-news/pkg/server/fiber"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/recover"
@@ -15,18 +14,17 @@ import (
 )
 
 // Handlers группирует все обработчики.
+// Так как эндпоинтов не так много и логика обработки одинаковая, хендлеры объявлены в одном пакете
 type Handlers struct {
-	News     *news.Handler
-	Comments *comments.Handler
-	Health   *health.Handler
+	Health       *health.Handler
+	NewsComments *handler.Handler
 }
 
 // NewHandlers создает все обработчики.
 func NewHandlers(cfg fiberServer.Config, registry service.RegistryService, timeout time.Duration) *Handlers {
 	return &Handlers{
-		News:     news.NewHandler(registry, timeout),
-		Comments: comments.NewHandler(),
-		Health:   health.NewHandler(cfg, registry, timeout),
+		NewsComments: handler.NewHandler(registry, timeout),
+		Health:       health.NewHandler(cfg, registry, timeout),
 	}
 }
 
@@ -41,8 +39,8 @@ func SetupRoutes(app *fiber.App, handlers *Handlers) {
 
 	// Группа API маршрутов
 	api := app.Group("/api")
-	setupNewsRoutes(api, handlers.News)
-	setupCommentsRoutes(api, handlers.Comments)
+	setupNewsRoutes(api, handlers.NewsComments)
+	setupCommentsRoutes(api, handlers.NewsComments)
 
 	app.Use(
 		func(c *fiber.Ctx) error {
@@ -59,22 +57,22 @@ func SetupRoutes(app *fiber.App, handlers *Handlers) {
 }
 
 // setupNewsRoutes настраивает маршруты для новостей.
-func setupNewsRoutes(api fiber.Router, h *news.Handler) {
+func setupNewsRoutes(api fiber.Router, h *handler.Handler) {
 	newsGroup := api.Group("/news")
 	{
-		newsGroup.Get("/", h.FindAll)
-		newsGroup.Get("/last", h.FindLast)
-		newsGroup.Get("/latest/:limit?", h.FindLatest)
-		newsGroup.Get("/:id", h.FindByID)
+		newsGroup.Get("/", h.FindAllNews)
+		newsGroup.Get("/last", h.FindLastNews)
+		newsGroup.Get("/latest/:limit?", h.FindLatestNews)
+		newsGroup.Get("/:id", h.FindByIDNews)
 	}
 }
 
 // setupCommentsRoutes настраивает маршруты для комментариев.
-func setupCommentsRoutes(api fiber.Router, h *comments.Handler) {
+func setupCommentsRoutes(api fiber.Router, h *handler.Handler) {
 	commentsGroup := api.Group("/comments")
 	{
 		// Получение комментариев к новости
-		commentsGroup.Get("/news/:newsId", h.GetCommentsHandler)
-		commentsGroup.Post("/", h.CreateCommentHandler)
+		commentsGroup.Get("/", h.FindAllCommentsByNewsID)
+		commentsGroup.Post("/", h.CreateComments)
 	}
 }
