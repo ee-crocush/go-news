@@ -114,6 +114,22 @@ func (r *PostRepository) FindAll(ctx context.Context) ([]*dom.Post, error) {
 	return r.decodeManyPosts(ctx, cursor)
 }
 
+// FindByTitleSubstring ищет новости, в заголовке которых есть подстрока substr.
+func (r *PostRepository) FindByTitleSubstring(ctx context.Context, substr string) ([]*dom.Post, error) {
+	ctx, cancel := context.WithTimeout(ctx, r.timeout)
+	defer cancel()
+
+	filter := bson.M{"title": bson.M{"$regex": substr, "$options": "i"}}
+	opts := options.Find().SetSort(bson.D{{Key: "pub_time", Value: -1}})
+	cursor, err := r.collection.Find(ctx, filter, opts)
+	if err != nil {
+		return nil, fmt.Errorf("PostRepository.FindByTitleSubstring: %w", err)
+	}
+	defer cursor.Close(ctx)
+
+	return r.decodeManyPosts(ctx, cursor)
+}
+
 // getNextID возвращает следующее значение идентификатора.
 func (r *PostRepository) getNextID(ctx context.Context) (int32, error) {
 	filter := bson.M{"_id": "posts"}

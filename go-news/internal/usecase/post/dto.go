@@ -52,6 +52,11 @@ type FindLatestInputDTO struct {
 	Limit int
 }
 
+// FindByTitleSubstringInputDTO представляет входной DTO для поиска новостей по заголовку.
+type FindByTitleSubstringInputDTO struct {
+	Substring string `json:"substring"`
+}
+
 // Validate проверяет входные данные для поиска последних n новостей.
 func (f *FindLatestInputDTO) Validate() {
 	if f.Limit <= 0 {

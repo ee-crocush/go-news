@@ -26,12 +26,18 @@ type FindAllPostExecutor interface {
 	Execute(ctx context.Context) ([]uc.PostDTO, error)
 }
 
+// FindByTitleSubstringExecutor интерфейс для поиска новостей по заголовку.
+type FindByTitleSubstringExecutor interface {
+	Execute(ctx context.Context, in uc.FindByTitleSubstringInputDTO) ([]uc.PostDTO, error)
+}
+
 // Handler представляет HTTP-handler для работы с новостями.
 type Handler struct {
-	findByIDUC   FindByIDPostExecutor
-	findLastUC   FindLastPostExecutor
-	findLatestUC FindLatestPostExecutor
-	findAllUC    FindAllPostExecutor
+	findByIDUC          FindByIDPostExecutor
+	findLastUC          FindLastPostExecutor
+	findLatestUC        FindLatestPostExecutor
+	findAllUC           FindAllPostExecutor
+	findByTitleSubstrUC FindByTitleSubstringExecutor
 }
 
 // NewHandler создает новый экземпляр HTTP-handler.
@@ -40,11 +46,13 @@ func NewHandler(
 	findLastUC FindLastPostExecutor,
 	findLatestUC FindLatestPostExecutor,
 	findAllUC FindAllPostExecutor,
+	findByTitleSubstrUC FindByTitleSubstringExecutor,
 ) *Handler {
 	return &Handler{
-		findByIDUC:   findByIDUC,
-		findLastUC:   findLastUC,
-		findLatestUC: findLatestUC,
-		findAllUC:    findAllUC,
+		findByIDUC:          findByIDUC,
+		findLastUC:          findLastUC,
+		findLatestUC:        findLatestUC,
+		findAllUC:           findAllUC,
+		findByTitleSubstrUC: findByTitleSubstrUC,
 	}
 }

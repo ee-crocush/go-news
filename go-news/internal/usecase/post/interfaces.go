@@ -21,3 +21,8 @@ type FindLastContract interface {
 type FindLatestContract interface {
 	Execute(ctx context.Context, in FindLatestInputDTO) ([]PostDTO, error)
 }
+
+// FindByTitleSubstringContract интерфейс для поиска новостей по заголовку.
+type FindByTitleSubstringContract interface {
+	Execute(ctx context.Context, in FindByTitleSubstringInputDTO) ([]PostDTO, error)
+}
