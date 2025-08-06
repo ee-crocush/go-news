@@ -101,29 +101,20 @@ func (r *PostRepository) FindLatest(ctx context.Context, limit int) ([]*dom.Post
 }
 
 // FindAll получает все новости.
-func (r *PostRepository) FindAll(ctx context.Context) ([]*dom.Post, error) {
+func (r *PostRepository) FindAll(ctx context.Context, search string, limit, offset int) ([]*dom.Post, error) {
 	ctx, cancel := context.WithTimeout(ctx, r.timeout)
 	defer cancel()
 
-	cursor, err := r.collection.Find(ctx, bson.M{})
-	if err != nil {
-		return nil, fmt.Errorf("PostRepository.FindAll: %w", err)
+	filter := bson.M{}
+	if search != "" {
+		filter["title"] = bson.M{"$regex": search, "$options": "i"}
 	}
-	defer cursor.Close(ctx)
 
-	return r.decodeManyPosts(ctx, cursor)
-}
+	opts := options.Find().SetSort(bson.D{{Key: "pub_time", Value: -1}}).SetLimit(int64(limit)).SetSkip(int64(offset))
 
-// FindByTitleSubstring ищет новости, в заголовке которых есть подстрока substr.
-func (r *PostRepository) FindByTitleSubstring(ctx context.Context, substr string) ([]*dom.Post, error) {
-	ctx, cancel := context.WithTimeout(ctx, r.timeout)
-	defer cancel()
-
-	filter := bson.M{"title": bson.M{"$regex": substr, "$options": "i"}}
-	opts := options.Find().SetSort(bson.D{{Key: "pub_time", Value: -1}})
 	cursor, err := r.collection.Find(ctx, filter, opts)
 	if err != nil {
-		return nil, fmt.Errorf("PostRepository.FindByTitleSubstring: %w", err)
+		return nil, fmt.Errorf("PostRepository.FindAll: %w", err)
 	}
 	defer cursor.Close(ctx)
 

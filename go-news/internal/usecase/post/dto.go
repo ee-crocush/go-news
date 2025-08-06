@@ -5,6 +5,7 @@ import (
 	"fmt"
 	dom "github.com/ee-crocush/go-news/go-news/internal/domain/post"
 	"net/url"
+	"unicode/utf8"
 )
 
 // ParsedRSSDTO представляет данные, извлечённые из RSS.
@@ -38,6 +39,13 @@ type FindByIDInputDTO struct {
 	ID int32 `json:"id"`
 }
 
+// FindAllInputDTO представляет входной DTO для поиска поста по параметрам.
+type FindAllInputDTO struct {
+	Search string
+	Limit  int
+	Page   int
+}
+
 // PostDTO представляет выходной DTO поста.
 type PostDTO struct {
 	ID      int32  `json:"id"`
@@ -67,6 +75,8 @@ func (f *FindLatestInputDTO) Validate() {
 	}
 }
 
+const ContentLimit = 300
+
 // MapPostsToDTO мапит слайс доменных постов в слайс DTO.
 func MapPostsToDTO(posts []*dom.Post) []PostDTO {
 	postsDTO := make([]PostDTO, 0, len(posts))
@@ -75,11 +85,21 @@ func MapPostsToDTO(posts []*dom.Post) []PostDTO {
 			postsDTO, PostDTO{
 				ID:      post.ID().Value(),
 				Title:   post.Title().Value(),
-				Content: post.Content().Value(),
+				Content: trancateContent(post.Content().Value(), ContentLimit),
 				Link:    post.Link().Value(),
 				PubTime: post.PubTime().String(),
 			},
 		)
 	}
 	return postsDTO
+}
+
+func trancateContent(content string, limit int) string {
+	if utf8.RuneCountInString(content) <= limit {
+		return content
+	}
+
+	runse := []rune(content)
+
+	return string(runse[:limit])
 }

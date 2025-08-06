@@ -17,7 +17,5 @@ type PostFinder interface {
 	// FindLatest получает последние n новостей.
 	FindLatest(ctx context.Context, limit int) ([]*Post, error)
 	// FindAll получает все новости.
-	FindAll(ctx context.Context) ([]*Post, error)
-	// FindByTitleSubstring ищет новости, в заголовке которых есть подстрока substr.
-	FindByTitleSubstring(ctx context.Context, substr string) ([]*Post, error)
+	FindAll(ctx context.Context, search string, limit, offset int) ([]*Post, error)
 }

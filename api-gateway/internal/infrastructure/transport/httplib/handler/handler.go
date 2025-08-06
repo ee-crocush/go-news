@@ -39,6 +39,9 @@ func (h *Handler) proxyRequest(c *fiber.Ctx, routeName, path string) error {
 	}
 
 	url := route.BaseURL + path
+	if query := c.Context().QueryArgs().String(); len(query) > 0 {
+		url += "?" + string(query)
+	}
 	// Создаем запрос
 	req, err := http.NewRequest(c.Method(), url, bytes.NewReader(c.Body()))
 	if err != nil {

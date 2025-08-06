@@ -9,7 +9,7 @@ type FindByIDUContract interface {
 
 // FindAllContract интерфейс для поиска всех новостей.
 type FindAllContract interface {
-	Execute(ctx context.Context) ([]PostDTO, error)
+	Execute(ctx context.Context, in FindAllInputDTO) ([]PostDTO, error)
 }
 
 // FindLastContract интерфейс для поиска последней новости.
@@ -20,9 +20,4 @@ type FindLastContract interface {
 // FindLatestContract интерфейс для поиска последних n новостей.
 type FindLatestContract interface {
 	Execute(ctx context.Context, in FindLatestInputDTO) ([]PostDTO, error)
-}
-
-// FindByTitleSubstringContract интерфейс для поиска новостей по заголовку.
-type FindByTitleSubstringContract interface {
-	Execute(ctx context.Context, in FindByTitleSubstringInputDTO) ([]PostDTO, error)
 }

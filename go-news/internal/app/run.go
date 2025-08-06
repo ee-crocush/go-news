@@ -71,9 +71,8 @@ func initHandler(repos *repo.PostRepository) *handler.Handler {
 	findLastUC := uc.NewFindLastUseCase(repos)
 	findLatestUC := uc.NewFindLatestUseCase(repos)
 	findAllUC := uc.NewFindAllUseCase(repos)
-	findByTitleSubstrUC := uc.NewFindByTitleSubstring(repos)
 
-	return handler.NewHandler(findByIDUC, findLastUC, findLatestUC, findAllUC, findByTitleSubstrUC)
+	return handler.NewHandler(findByIDUC, findLastUC, findLatestUC, findAllUC)
 }
 
 func startRSSBackgroundJob(cfg config.Config, ucp uc.ParseAndStoreUseCase, log *zerolog.Logger) {

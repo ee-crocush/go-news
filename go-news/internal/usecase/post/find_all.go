@@ -19,8 +19,10 @@ func NewFindAllUseCase(repo dom.Repository) *FindAllUseCase {
 }
 
 // Execute выполняет бизнес-логику поиска всех новостей.
-func (uc *FindAllUseCase) Execute(ctx context.Context) ([]PostDTO, error) {
-	posts, err := uc.repo.FindAll(ctx)
+func (uc *FindAllUseCase) Execute(ctx context.Context, in FindAllInputDTO) ([]PostDTO, error) {
+	offset := (in.Page - 1) * in.Limit
+
+	posts, err := uc.repo.FindAll(ctx, in.Search, in.Limit, offset)
 	if err != nil {
 		return []PostDTO{}, fmt.Errorf("FindAllUseCase.Execute: %w", err)
 	}
