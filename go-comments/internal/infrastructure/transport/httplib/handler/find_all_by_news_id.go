@@ -12,16 +12,10 @@ type FindAllByNewsIDRequest struct {
 	NewsID int32 `json:"news_id" validate:"required,gt=0"`
 }
 
-// CommentsDTO представляет массив комментариев, которые отдадим в ответе.
-// Создавать еще отдельно структуру нет смысла, т.к. придется снова рекурсивно проходится по массиву
-type CommentsDTO struct {
-	Comments []uc.CommentDTO `json:"comments"`
-}
-
 // FindAllByNewsIDResponse представляет ответ на запрос получения всех комментариев конкретной новости.
+// Создавать еще отдельно структуру нет смысла, т.к. придется снова рекурсивно проходится по массиву.
 type FindAllByNewsIDResponse struct {
-	Status string      `json:"status"`
-	Data   CommentsDTO `json:"data"`
+	Comments []uc.CommentDTO `json:"comments"`
 }
 
 // FindAllByNewsIDHandler обрабатывает запрос на получение всех комментариев конкретного поста (GET /comments).
@@ -44,8 +38,7 @@ func (h *Handler) FindAllByNewsIDHandler(c *fiber.Ctx) error {
 	}
 
 	response := FindAllByNewsIDResponse{
-		Status: "OK",
-		Data:   CommentsDTO{Comments: out},
+		Comments: out,
 	}
 
 	return c.Status(fiber.StatusOK).JSON(api.Resp(response))

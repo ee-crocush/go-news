@@ -15,7 +15,7 @@ type FindLatestRequest struct {
 
 // FindLatestResponse представляет ответ на запрос получения последних n новостей.
 type FindLatestResponse struct {
-	Posts []PostItem `json:"posts"`
+	News []PostDTO `json:"news"`
 }
 
 // FindLatestHandler обрабатывает запрос (GET /news/latest).
@@ -33,21 +33,10 @@ func (h *Handler) FindLatestHandler(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(api.Err(err))
 	}
 
-	posts := make([]PostItem, 0, len(out))
-	for _, post := range out {
-		posts = append(
-			posts, PostItem{
-				ID:      post.ID,
-				Title:   post.Title,
-				Content: post.Content,
-				Link:    post.Link,
-				PubTime: post.PubTime,
-			},
-		)
-	}
+	news := MapNewsToNewsDTO(out)
 
-	resp := FindAllResponse{
-		Posts: posts,
+	resp := FindLatestResponse{
+		News: news,
 	}
 
 	return c.Status(fiber.StatusOK).JSON(api.Resp(resp))

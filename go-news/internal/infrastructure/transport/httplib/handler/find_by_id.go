@@ -14,11 +14,7 @@ type FindByIdRequest struct {
 
 // FindByIdRequestResponse представляет выходной DTO поста.
 type FindByIdRequestResponse struct {
-	ID      int32  `json:"id"`
-	Title   string `json:"title"`
-	Content string `json:"content"`
-	Link    string `json:"link"`
-	PubTime string `json:"pub_time"`
+	Post PostDTO `json:"post"`
 }
 
 // FindByIDHandler обрабатывает запрос (GET /news/<id>).
@@ -42,12 +38,9 @@ func (h *Handler) FindByIDHandler(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(api.Err(err))
 	}
 
+	post := MapPostToPostDTO(out)
 	resp := FindByIdRequestResponse{
-		ID:      out.ID,
-		Title:   out.Title,
-		Content: out.Content,
-		Link:    out.Link,
-		PubTime: out.PubTime,
+		Post: post,
 	}
 
 	return c.Status(fiber.StatusOK).JSON(api.Resp(resp))

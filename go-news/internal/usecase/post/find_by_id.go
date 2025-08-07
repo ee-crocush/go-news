@@ -3,6 +3,7 @@ package post
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	dom "github.com/ee-crocush/go-news/go-news/internal/domain/post"
 )
@@ -34,8 +35,16 @@ func (uc *FindByIDUseCase) Execute(ctx context.Context, in FindByIDInputDTO) (Po
 	return PostDTO{
 		ID:      post.ID().Value(),
 		Title:   post.Title().Value(),
-		Content: post.Content().Value(),
+		Content: replaceUnnecessary(post.Content().Value()),
 		Link:    post.Link().Value(),
 		PubTime: post.PubTime().String(),
 	}, nil
+}
+
+const UnnecessaryWords = "Читать далее"
+
+func replaceUnnecessary(original string) string {
+	clean := strings.Replace(original, UnnecessaryWords, "", 1)
+
+	return strings.TrimSpace(clean)
 }

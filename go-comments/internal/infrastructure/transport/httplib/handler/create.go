@@ -17,7 +17,6 @@ type CreateRequest struct {
 
 // CreateRequestResponse представляет выходной данные запроса.
 type CreateRequestResponse struct {
-	Status  string `json:"status"`
 	Message string `json:"message"`
 }
 
@@ -47,7 +46,6 @@ func (h *Handler) CreateHandler(c *fiber.Ctx) error {
 	}
 
 	response := CreateRequestResponse{
-		Status:  "OK",
 		Message: "Comment created successfully",
 	}
 

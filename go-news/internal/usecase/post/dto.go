@@ -85,7 +85,7 @@ func MapPostsToDTO(posts []*dom.Post) []PostDTO {
 			postsDTO, PostDTO{
 				ID:      post.ID().Value(),
 				Title:   post.Title().Value(),
-				Content: trancateContent(post.Content().Value(), ContentLimit),
+				Content: truncateContent(post.Content().Value(), ContentLimit),
 				Link:    post.Link().Value(),
 				PubTime: post.PubTime().String(),
 			},
@@ -94,12 +94,12 @@ func MapPostsToDTO(posts []*dom.Post) []PostDTO {
 	return postsDTO
 }
 
-func trancateContent(content string, limit int) string {
+func truncateContent(content string, limit int) string {
 	if utf8.RuneCountInString(content) <= limit {
 		return content
 	}
 
-	runse := []rune(content)
+	runes := []rune(content)
 
-	return string(runse[:limit])
+	return fmt.Sprintf("%s...", string(runes[:limit]))
 }
