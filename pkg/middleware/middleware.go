@@ -22,14 +22,24 @@ func LoggingMiddleware(log zerolog.Logger) fiber.Handler {
 		err := c.Next()
 		status := c.Response().StatusCode()
 		responseBody := c.Response().Body()
+		requestBody := c.Body()
+		queryParams := c.Queries()
+
 		evt := log.With().
 			Str("request_id", ctx.Value("request_id").(string)).
 			Int("status_code", status).
 			Str("ip", ip).
 			Str("method", c.Method()).
 			Str("path", c.Path()).
-			RawJSON("request_body", c.Body()).
+			Interface("query_params", queryParams).
 			Logger()
+
+		// Логируем request_body только если есть содержимое
+		if len(requestBody) > 0 {
+			evt = evt.With().RawJSON("request_body", requestBody).Logger()
+		} else {
+			evt = evt.With().RawJSON("request_body", []byte("null")).Logger()
+		}
 
 		switch {
 		case err != nil:

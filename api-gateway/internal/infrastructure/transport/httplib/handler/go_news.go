@@ -11,8 +11,11 @@ import (
 // @Summary Получить все новости
 // @Description Возвращает список всех новостей.
 // @Tags news
+// @Param page path int false "Страница" default(1)
+// @Param search path string false "Поиск заголовка" default("")
+// @Param limit path int false "Страница" default(10)
 // @Produce json
-// @Success 200 {array} domain.Post
+// @Success 200 {array} dto.Post
 // @Router /api/news [get]
 func (h *Handler) FindAllNews(c *fiber.Ctx) error {
 	return h.handleServiceRequest(
@@ -28,7 +31,7 @@ func (h *Handler) FindAllNews(c *fiber.Ctx) error {
 // @Description Возвращает последнюю новость.
 // @Tags news
 // @Produce json
-// @Success 200 {object} domain.Post
+// @Success 200 {object} dto.Post
 // @Router /api/news/last [get]
 func (h *Handler) FindLastNews(c *fiber.Ctx) error {
 	return h.handleServiceRequest(
@@ -45,7 +48,7 @@ func (h *Handler) FindLastNews(c *fiber.Ctx) error {
 // @Tags news
 // @Param limit path int false "Количество последних новостей" default(10)
 // @Produce json
-// @Success 200 {object} domain.Post
+// @Success 200 {array} dto.Post
 // @Router /api/news/latest/{limit} [get]
 func (h *Handler) FindLatestNews(c *fiber.Ctx) error {
 	limit := c.Params("limit", "10")
@@ -65,7 +68,7 @@ func (h *Handler) FindLatestNews(c *fiber.Ctx) error {
 // @Tags news
 // @Param id path string true "ID новости"
 // @Produce json
-// @Success 200 {object} domain.PostWithComments
+// @Success 200 {object} dto.PostWithComments
 // @Router /api/news/{id} [get]
 func (h *Handler) FindByIDNews(c *fiber.Ctx) error {
 	id := c.Params("id")

@@ -10,8 +10,8 @@ import (
 // @Tags comments
 // @Accept json
 // @Produce json
-// @Param request body CreateCommentRequest true "Данные нового комментария"
-// @Success 200 {object} domain.CommentResponse
+// @Param request body dto.CreateCommentRequest true "Данные нового комментария"
+// @Success 200 {object} dto.CommentResponse
 // @Router /api/comments [post]
 func (h *Handler) CreateComments(c *fiber.Ctx) error {
 	return h.handleServiceRequest(

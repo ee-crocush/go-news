@@ -3,7 +3,7 @@ package app
 
 import (
 	"github.com/ee-crocush/go-news/api-gateway/internal/infrastructure/config"
-	"github.com/ee-crocush/go-news/api-gateway/internal/infrastructure/service"
+	"github.com/ee-crocush/go-news/api-gateway/internal/infrastructure/registry"
 	"github.com/ee-crocush/go-news/api-gateway/internal/infrastructure/transport/httplib"
 	"github.com/ee-crocush/go-news/pkg/server"
 	commonFiber "github.com/ee-crocush/go-news/pkg/server/fiber"
@@ -13,7 +13,7 @@ import (
 
 // Run запускает HTTP сервер и инициализирует все необходимые компоненты.
 func Run(cfg *config.Config) error {
-	services := service.NewRouteRegistry(cfg.Routes)
+	services := registry.NewRouteRegistry(cfg.Routes)
 	timeout := time.Duration(cfg.App.ConnectTimeout) * time.Second
 	handlers := httplib.NewHandlers(cfg, services, timeout)
 

@@ -17,7 +17,7 @@ type Comment struct {
 	Username string    `json:"username" example:"Example_username"`
 	Content  string    `json:"content" example:"Example content"`
 	PubTime  string    `json:"pub_time" example:"2025-06-26 10:00:43"`
-	Children []Comment `json:"children" example:"[]"`
+	Children []Comment `json:"children"`
 }
 
 // CommentResponse описывает структуру ответа на /comments.

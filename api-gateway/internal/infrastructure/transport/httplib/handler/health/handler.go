@@ -3,7 +3,7 @@ package health
 
 import (
 	"fmt"
-	"github.com/ee-crocush/go-news/api-gateway/internal/infrastructure/service"
+	"github.com/ee-crocush/go-news/api-gateway/internal/infrastructure/registry"
 	fiberServer "github.com/ee-crocush/go-news/pkg/server/fiber"
 	"github.com/gofiber/fiber/v2"
 	"net/http"
@@ -14,12 +14,12 @@ import (
 type Handler struct {
 	startTime  time.Time
 	config     fiberServer.Config
-	registry   service.RegistryService
+	registry   registry.RegistryService
 	httpClient *http.Client
 }
 
 // NewHandler создает новый экземпляр HTTP-handler для health checks.
-func NewHandler(cfg fiberServer.Config, registry service.RegistryService, timeout time.Duration) *Handler {
+func NewHandler(cfg fiberServer.Config, registry registry.RegistryService, timeout time.Duration) *Handler {
 	return &Handler{
 		startTime:  time.Now(),
 		config:     cfg,

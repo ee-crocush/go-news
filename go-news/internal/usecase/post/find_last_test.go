@@ -1,9 +1,9 @@
 package post
 
 import (
-	dom "GoNews/internal/domain/post"
 	"context"
 	"errors"
+	dom "github.com/ee-crocush/go-news/go-news/internal/domain/post"
 	"testing"
 )
 
@@ -24,7 +24,9 @@ func (m *mockRepositoryForFindLast) FindByID(ctx context.Context, postID dom.Pos
 	return nil, nil
 }
 
-func (m *mockRepositoryForFindLast) FindAll(ctx context.Context) ([]*dom.Post, error) {
+func (m *mockRepositoryForFindLast) FindAll(ctx context.Context, search string, limit int, offset int) (
+	[]*dom.Post, error,
+) {
 	return nil, nil
 }
 

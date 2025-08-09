@@ -5,7 +5,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/ee-crocush/go-news/api-gateway/internal/infrastructure/service"
+	"github.com/ee-crocush/go-news/api-gateway/internal/infrastructure/registry"
 	"github.com/gofiber/fiber/v2"
 	"io"
 	"net/http"
@@ -15,12 +15,12 @@ import (
 
 // Handler представляет HTTP-handler для работы с новостями через API Gateway.
 type Handler struct {
-	registry   service.RegistryService
+	registry   registry.RegistryService
 	httpClient *http.Client
 }
 
 // NewHandler создает новый экземпляр HTTP-handler.
-func NewHandler(registry service.RegistryService, timeout time.Duration) *Handler {
+func NewHandler(registry registry.RegistryService, timeout time.Duration) *Handler {
 	return &Handler{
 		registry:   registry,
 		httpClient: &http.Client{Timeout: timeout},

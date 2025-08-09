@@ -3,7 +3,7 @@ package httplib
 
 import (
 	_ "github.com/ee-crocush/go-news/api-gateway/docs"
-	"github.com/ee-crocush/go-news/api-gateway/internal/infrastructure/service"
+	"github.com/ee-crocush/go-news/api-gateway/internal/infrastructure/registry"
 	"github.com/ee-crocush/go-news/api-gateway/internal/infrastructure/transport/httplib/handler"
 	"github.com/ee-crocush/go-news/api-gateway/internal/infrastructure/transport/httplib/handler/health"
 	fiberServer "github.com/ee-crocush/go-news/pkg/server/fiber"
@@ -21,7 +21,7 @@ type Handlers struct {
 }
 
 // NewHandlers создает все обработчики.
-func NewHandlers(cfg fiberServer.Config, registry service.RegistryService, timeout time.Duration) *Handlers {
+func NewHandlers(cfg fiberServer.Config, registry registry.RegistryService, timeout time.Duration) *Handlers {
 	return &Handlers{
 		NewsComments: handler.NewHandler(registry, timeout),
 		Health:       health.NewHandler(cfg, registry, timeout),

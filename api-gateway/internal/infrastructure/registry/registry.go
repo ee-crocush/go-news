@@ -1,6 +1,6 @@
 // Package service обеспечивает функциональность для управления маршрутами
 // и предоставления к ним доступа.
-package service
+package registry
 
 import (
 	"github.com/ee-crocush/go-news/api-gateway/internal/infrastructure/config"

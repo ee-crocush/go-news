@@ -1,9 +1,9 @@
 package post
 
 import (
-	dom "GoNews/internal/domain/post"
 	"context"
 	"errors"
+	dom "github.com/ee-crocush/go-news/go-news/internal/domain/post"
 	"testing"
 )
 
@@ -13,7 +13,7 @@ type mockRepository struct {
 	err   error
 }
 
-func (m *mockRepository) FindAll(ctx context.Context) ([]*dom.Post, error) {
+func (m *mockRepository) FindAll(ctx context.Context, search string, limit int, offset int) ([]*dom.Post, error) {
 	if m.err != nil {
 		return nil, m.err
 	}
@@ -73,7 +73,12 @@ func TestFindAllUseCase_Execute(t *testing.T) {
 			useCase := NewFindAllUseCase(repo)
 			ctx := context.Background()
 
-			result, err := useCase.Execute(ctx)
+			in := FindAllInputDTO{
+				Search: "",
+				Limit:  10,
+				Page:   0,
+			}
+			result, err := useCase.Execute(ctx, in)
 
 			if err != nil {
 				t.Errorf("expected no error, got %v", err)
@@ -110,7 +115,12 @@ func TestFindAllUseCase_Execute(t *testing.T) {
 			useCase := NewFindAllUseCase(repo)
 			ctx := context.Background()
 
-			result, err := useCase.Execute(ctx)
+			in := FindAllInputDTO{
+				Search: "",
+				Limit:  10,
+				Page:   0,
+			}
+			result, err := useCase.Execute(ctx, in)
 
 			if err == nil {
 				t.Error("expected error, got nil")
@@ -136,7 +146,12 @@ func TestFindAllUseCase_Execute(t *testing.T) {
 			useCase := NewFindAllUseCase(repo)
 			ctx := context.Background()
 
-			result, err := useCase.Execute(ctx)
+			in := FindAllInputDTO{
+				Search: "",
+				Limit:  10,
+				Page:   0,
+			}
+			result, err := useCase.Execute(ctx, in)
 
 			if err != nil {
 				t.Errorf("expected no error, got %v", err)
@@ -154,11 +169,15 @@ func TestFindAllUseCase_Execute(t *testing.T) {
 				posts: []*dom.Post{},
 				err:   nil,
 			}
-
+			in := FindAllInputDTO{
+				Search: "",
+				Limit:  10,
+				Page:   0,
+			}
 			useCase := NewFindAllUseCase(repo)
 			ctx, cancel := context.WithCancel(context.Background())
 			cancel() //
-			_, err := useCase.Execute(ctx)
+			_, err := useCase.Execute(ctx, in)
 			_ = err
 		},
 	)
