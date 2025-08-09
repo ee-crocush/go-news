@@ -125,3 +125,32 @@ func NewUserName(text string) (UserName, error) {
 
 // Value возвращает значение имени пользователя.
 func (p UserName) Value() string { return p.value }
+
+// Status представляет статус модерации комментария.
+type Status struct {
+	value string
+}
+
+const (
+	// Pending модерация в процессе.
+	Pending = "pending"
+	// Approved Модерация пройдена.
+	Approved = "approved"
+	// Rejected Модерация не пройдена.
+	Rejected = "rejected"
+)
+
+// NewStatus возвращает новый объект Status с заданным значением.
+func NewStatus(status string) (Status, error) {
+	switch status {
+	case Pending, Approved, Rejected:
+		return Status{value: status}, nil
+	default:
+		return Status{}, ErrInvalidStatus
+	}
+}
+
+// Value возвращает значение статуса.
+func (o Status) Value() string {
+	return o.value
+}

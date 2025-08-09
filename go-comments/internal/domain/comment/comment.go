@@ -13,6 +13,7 @@ type Comment struct {
 	username UserName
 	content  Content
 	pubTime  PubTime
+	status   Status
 	children []*Comment
 }
 
@@ -33,11 +34,17 @@ func NewComment(newsID int32, username, content string) (*Comment, error) {
 		return nil, fmt.Errorf("NewPost.NewContent: %w", err)
 	}
 
+	statusVO, err := NewStatus(Pending)
+	if err != nil {
+		return nil, fmt.Errorf("NewPost.NewStatus: %w", err)
+	}
+
 	return &Comment{
 		newsID:   newsIDVO,
 		username: usernameVO,
 		content:  contentVO,
 		pubTime:  NewPubTime(),
+		status:   statusVO,
 	}, nil
 }
 
@@ -61,6 +68,9 @@ func (c *Comment) Content() Content { return c.content }
 // PubTime возвращает время публикации комментария.
 func (c *Comment) PubTime() PubTime { return c.pubTime }
 
+// Status возвращает статус модерации.
+func (c *Comment) Status() Status { return c.status }
+
 // Children возвращает дочерние комментарии.
 func (c *Comment) Children() []*Comment {
 	return c.children
@@ -81,7 +91,7 @@ func (c *Comment) SetParentID(id ParentID) { c.parentID = id }
 
 // RehydrateComment — вспомогательный конструктор для «восстановления» сущности из БД.
 func RehydrateComment(
-	id ID, newsID NewsID, parentID ParentID, username UserName, content Content, pubTime PubTime,
+	id ID, newsID NewsID, parentID ParentID, username UserName, content Content, pubTime PubTime, status Status,
 ) *Comment {
 	return &Comment{
 		id:       id,
@@ -90,5 +100,6 @@ func RehydrateComment(
 		username: username,
 		content:  content,
 		pubTime:  pubTime,
+		status:   status,
 	}
 }

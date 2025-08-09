@@ -15,6 +15,6 @@ var (
 	ErrWrongLengthUserName = errors.New("username length must me between 6 and 50 symbols")
 	// ErrEmptyPubTime представляет ошибку незаполненной даты публикации комментария.
 	ErrEmptyPubTime = errors.New("empty Publication time")
-	// ErrCommentNotFound представляет ошибку ненайденного комментария.
-	ErrCommentNotFound = errors.New("comment not found")
+	// ErrInvalidStatus представляет ошибку невалидного статуса модерации.
+	ErrInvalidStatus = errors.New("invalid comment status")
 )

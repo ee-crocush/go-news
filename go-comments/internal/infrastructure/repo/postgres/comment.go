@@ -23,13 +23,13 @@ func NewCommentRepository(pool *pgxpool.Pool) *CommentRepository {
 // Create сохраняет комментарий.
 func (r *CommentRepository) Create(ctx context.Context, comment *dom.Comment) error {
 	const query = `
-		INSERT INTO comments (news_id, parent_id, user_name, content, pub_time)
-		VALUES ($1, $2, $3, $4, $5)
+		INSERT INTO comments (news_id, parent_id, user_name, content, pub_time, status)
+		VALUES ($1, $2, $3, $4, $5, $6)
 	`
 
 	_, err := r.pool.Exec(
 		ctx, query, comment.NewsID().Value(), comment.ParentID().Value(), comment.Username().Value(),
-		comment.Content().Value(), comment.PubTime().Time().UTC().Unix(),
+		comment.Content().Value(), comment.PubTime().Time().UTC().Unix(), comment.Status().Value(),
 	)
 	if err != nil {
 		return fmt.Errorf("NewCommentRepository.Create: %w", err)
@@ -42,10 +42,12 @@ func (r *CommentRepository) Create(ctx context.Context, comment *dom.Comment) er
 func (r *CommentRepository) FindByID(ctx context.Context, id dom.ID) (*dom.Comment, error) {
 	var row mapper.CommentRow
 
-	const query = `SELECT id, news_id, parent_id, user_name, content, pub_time FROM comments WHERE id=$1 LIMIT 1`
+	const query = `
+		SELECT id, news_id, parent_id, user_name, content, pub_time, status
+		FROM comments WHERE id=$1 LIMIT 1`
 
 	err := r.pool.QueryRow(ctx, query, id.Value()).Scan(
-		&row.ID, &row.NewsID, &row.ParentID, &row.Username, &row.Content, &row.PubTime,
+		&row.ID, &row.NewsID, &row.ParentID, &row.Username, &row.Content, &row.PubTime, &row.Status,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("CommentRepository.FindByID: %w", err)
@@ -57,11 +59,11 @@ func (r *CommentRepository) FindByID(ctx context.Context, id dom.ID) (*dom.Comme
 // FindAllByNewsID получает все комментарии конкретной новости.
 func (r *CommentRepository) FindAllByNewsID(ctx context.Context, newsID dom.NewsID) ([]*dom.Comment, error) {
 	const query = `
-		SELECT id, news_id, parent_id, user_name, content, pub_time
+		SELECT id, news_id, parent_id, user_name, content, pub_time, status
 		FROM comments 
-		WHERE news_id=$1 
+		WHERE news_id=$1 and status=$2
 		ORDER BY pub_time DESC`
-	rows, err := r.pool.Query(ctx, query, newsID.Value())
+	rows, err := r.pool.Query(ctx, query, newsID.Value(), dom.Approved)
 	if err != nil {
 		return nil, fmt.Errorf("CommentRepository.FindAll: %w", err)
 	}
