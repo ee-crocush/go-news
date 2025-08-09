@@ -5,9 +5,15 @@ import (
 	dom "github.com/ee-crocush/go-news/go-comments/internal/domain/comment"
 )
 
-// AllByNewsIDDTO представляет входной DTO всех комментариев по ID новости.
+// AllByNewsIDDTO представляет входной DTO получения всех комментариев по ID новости.
 type AllByNewsIDDTO struct {
 	NewsID int32 `json:"news_id"`
+}
+
+// PublishDTO представляет входной DTO публикации/отклонения комментария.
+type StatusDTO struct {
+	ID     int64  `json:"id"`
+	Status string `json:"status"`
 }
 
 // CommentDTO представляет выходной DTO коммента.

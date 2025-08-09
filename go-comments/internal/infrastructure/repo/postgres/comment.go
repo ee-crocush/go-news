@@ -23,18 +23,41 @@ func NewCommentRepository(pool *pgxpool.Pool) *CommentRepository {
 // Create сохраняет комментарий.
 func (r *CommentRepository) Create(ctx context.Context, comment *dom.Comment) error {
 	const query = `
-		INSERT INTO comments (news_id, parent_id, user_name, content, pub_time, status)
+		INSERT INTO comments (news_id, parent_id, user_name, content, created_at, status)
 		VALUES ($1, $2, $3, $4, $5, $6)
 	`
 
 	_, err := r.pool.Exec(
 		ctx, query, comment.NewsID().Value(), comment.ParentID().Value(), comment.Username().Value(),
-		comment.Content().Value(), comment.PubTime().Time().UTC().Unix(), comment.Status().Value(),
+		comment.Content().Value(), comment.CreatedAt().Time().UTC().Unix(), comment.Status().Value(),
 	)
 	if err != nil {
 		return fmt.Errorf("NewCommentRepository.Create: %w", err)
 	}
 
+	return nil
+}
+
+// UpdateStatus публикует/отклоняет комментарий.
+func (r *CommentRepository) UpdateStatus(
+	ctx context.Context, id dom.ID, status dom.Status, pubTime *dom.CommentTime,
+) error {
+	const queryWithTime = `UPDATE comments SET status = $2, pub_time = $3 WHERE id = $1`
+	const queryNoTime = `UPDATE comments SET status = $2 WHERE id = $1`
+
+	if pubTime != nil {
+		_, err := r.pool.Exec(ctx, queryWithTime, id.Value(), status.Value(), pubTime.Time().UTC().Unix())
+		if err != nil {
+			return fmt.Errorf("CommentRepository.UpdateStatus: %w", err)
+		}
+
+		return nil
+	}
+
+	_, err := r.pool.Exec(ctx, queryNoTime, id.Value(), status.Value())
+	if err != nil {
+		return fmt.Errorf("CommentRepository.UpdateStatus: %w", err)
+	}
 	return nil
 }
 

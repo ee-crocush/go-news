@@ -80,32 +80,32 @@ func NewContent(text string) (Content, error) {
 // Value возвращает значение содержания комментария.
 func (c Content) Value() string { return c.value }
 
-// PubTime - время публикации комментария.
-type PubTime struct {
+// CommentTime - время комментария.
+type CommentTime struct {
 	value time.Time
 }
 
-// NewPubTime создает время публикации комментария.
-func NewPubTime() PubTime {
-	return PubTime{time.Now().UTC()}
+// NewTime создает время публикации комментария.
+func NewTime() CommentTime {
+	return CommentTime{time.Now().UTC()}
 }
 
-// NewFromUnixSeconds создаёт PubTime из секунд.
-func NewFromUnixSeconds(s int64) (PubTime, error) {
+// NewFromUnixSeconds создаёт Time из секунд.
+func NewFromUnixSeconds(s int64) (CommentTime, error) {
 	if s <= 0 {
-		return PubTime{}, ErrEmptyPubTime
+		return CommentTime{}, ErrEmptyTime
 	}
 
-	return PubTime{value: time.Unix(s, 0)}, nil
+	return CommentTime{value: time.Unix(s, 0)}, nil
 }
 
 // Time возвращает значение времени публикации комментария.
-func (t PubTime) Time() time.Time {
+func (t CommentTime) Time() time.Time {
 	return t.value
 }
 
 // String возвращает строковое значение времени комментария в формате 2006-01-02 15:04:05
-func (t PubTime) String() string {
+func (t CommentTime) String() string {
 	return t.value.Format(time.DateTime)
 }
 

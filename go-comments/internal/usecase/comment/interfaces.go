@@ -11,3 +11,8 @@ type CreateContract interface {
 type FindAllByNewsIDContract interface {
 	Execute(ctx context.Context, in AllByNewsIDDTO) ([]CommentDTO, error)
 }
+
+// ChangeStatusContract интерфейс для публикации/отклонения комментария.
+type ChangeStatusContract interface {
+	Execute(ctx context.Context, in StatusDTO) error
+}
