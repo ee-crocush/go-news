@@ -3,6 +3,8 @@ package handler
 
 import (
 	"bytes"
+	"encoding/json"
+	"fmt"
 	"github.com/ee-crocush/go-news/api-gateway/internal/infrastructure/service"
 	"github.com/gofiber/fiber/v2"
 	"io"
@@ -25,86 +27,100 @@ func NewHandler(registry service.RegistryService, timeout time.Duration) *Handle
 	}
 }
 
-// proxyRequest проксирует запросы к сервису.
-func (h *Handler) proxyRequest(c *fiber.Ctx, routeName, path string) error {
-	// Получаем эндпоинт
-	route, ok := h.registry.GetRouteByName(routeName)
-	if !ok {
-		return c.Status(fiber.StatusInternalServerError).JSON(
+type ServiceRequest struct {
+	RouteName string
+	Path      string
+}
+
+func (h *Handler) handleServiceRequest(c *fiber.Ctx, r ServiceRequest) error {
+	body, status, err := h.fetchProxyResponse(c, r)
+	if err != nil {
+		return c.Status(status).JSON(
 			fiber.Map{
 				"status":  "error",
-				"message": "Service route not found",
+				"message": err.Error(),
 			},
 		)
+	}
+
+	var raw json.RawMessage
+	if err = json.Unmarshal(body, &raw); err != nil {
+		// Если невалидный JSON — возвращаем как есть (например, plain text)
+		return c.Status(status).Send(body)
+	}
+
+	if status == fiber.StatusOK {
+		return c.Status(status).JSON(
+			fiber.Map{
+				"data": raw,
+			},
+		)
+	}
+
+	return c.Status(status).JSON(raw)
+}
+
+func (h *Handler) fetchProxyResponse(c *fiber.Ctx, r ServiceRequest) ([]byte, int, error) {
+	url, err := h.buildProxyURL(r.RouteName, r.Path, c)
+	if err != nil {
+		return nil, fiber.StatusInternalServerError, err
+	}
+
+	req, err := h.createProxyRequest(c, url)
+	if err != nil {
+		return nil, fiber.StatusInternalServerError, err
+	}
+
+	resp, err := h.httpClient.Do(req)
+	if err != nil {
+		return nil, fiber.StatusBadGateway, fmt.Errorf("failed to reach service: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fiber.StatusInternalServerError, fmt.Errorf("failed to read response: %w", err)
+	}
+
+	c.Set(fiber.HeaderContentType, resp.Header.Get(fiber.HeaderContentType))
+
+	return body, resp.StatusCode, nil
+}
+
+func (h *Handler) buildProxyURL(routeName, path string, c *fiber.Ctx) (string, error) {
+	route, ok := h.registry.GetRouteByName(routeName)
+	if !ok {
+		return "", fmt.Errorf("service route not found")
 	}
 
 	url := route.BaseURL + path
 	if query := c.Context().QueryArgs().String(); len(query) > 0 {
 		url += "?" + string(query)
 	}
-	// Создаем запрос
+
+	return url, nil
+}
+
+func (h *Handler) createProxyRequest(c *fiber.Ctx, url string) (*http.Request, error) {
 	req, err := http.NewRequest(c.Method(), url, bytes.NewReader(c.Body()))
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(
-			fiber.Map{
-				"status":  "error",
-				"message": "Failed to create proxy request",
-			},
-		)
+		return nil, fmt.Errorf("failed to create proxy request")
 	}
 
-	requestID, ok := c.Locals("request_id").(string)
-	if ok && requestID != "" {
+	// Прокидываем request ID, если есть
+	if requestID, ok := c.Locals("request_id").(string); ok && requestID != "" {
 		req.Header.Set("X-Request-ID", requestID)
 	}
 
-	// Прокидываем заголовки из запроса Fiber → http.Request
+	// Копируем заголовки из Fiber запроса
 	for key, values := range c.GetReqHeaders() {
 		if strings.ToLower(key) == "host" {
-			continue // не копируем Host
+			continue
 		}
 		for _, v := range values {
 			req.Header.Add(key, v)
 		}
 	}
 
-	// Явно прокидываем X-Request-ID (на всякий случай, если его не было выше)
-	//if requestID := c.Get("X-Request-ID"); requestID != "" {
-	//	req.Header.Set("X-Request-ID", requestID)
-	//}
-
-	// Отправляем запрос
-	resp, err := h.httpClient.Do(req)
-	if err != nil {
-		return c.Status(fiber.StatusBadGateway).JSON(
-			fiber.Map{
-				"status":  "error",
-				"message": "Failed to reach service",
-			},
-		)
-	}
-	defer resp.Body.Close()
-
-	// Копируем статус и тело ответа
-	c.Status(resp.StatusCode)
-
-	// Копируем заголовки из ответа
-	for key, values := range resp.Header {
-		for _, v := range values {
-			c.Set(key, v)
-		}
-	}
-
-	// Копируем тело ответа
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(
-			fiber.Map{
-				"status":  "error",
-				"message": "Failed to read response",
-			},
-		)
-	}
-
-	return c.Send(body)
+	return req, nil
 }

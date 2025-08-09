@@ -71,8 +71,6 @@ func setupNewsRoutes(api fiber.Router, h *handler.Handler) {
 func setupCommentsRoutes(api fiber.Router, h *handler.Handler) {
 	commentsGroup := api.Group("/comments")
 	{
-		// Получение комментариев к новости
-		commentsGroup.Get("/", h.FindAllCommentsByNewsID)
 		commentsGroup.Post("/", h.CreateComments)
 	}
 }

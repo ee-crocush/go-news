@@ -1,30 +1,26 @@
 package handler
 
 import (
+	"encoding/json"
 	"fmt"
+	"github.com/ee-crocush/go-news/api-gateway/internal/infrastructure/transport/httplib/dto"
 	"github.com/gofiber/fiber/v2"
 )
-
-const NewsRouteName = "go-news"
-
-// PostResponse описывает структуру ответа на /news
-type PostResponse struct {
-	ID      int32  `json:"id" example:"1"`
-	Title   string `json:"title" example:"Example title"`
-	Content string `json:"content" example:"Example Long Content"`
-	Link    string `json:"link" example:"https://example.com/news/1"`
-	PubTime string `json:"pub_time" example:"2025-06-26 10:00:43"`
-}
 
 // FindAllNews получает все новости.
 // @Summary Получить все новости
 // @Description Возвращает список всех новостей.
 // @Tags news
 // @Produce json
-// @Success 200 {array} PostResponse
+// @Success 200 {array} domain.Post
 // @Router /api/news [get]
 func (h *Handler) FindAllNews(c *fiber.Ctx) error {
-	return h.proxyRequest(c, NewsRouteName, "/news")
+	return h.handleServiceRequest(
+		c, ServiceRequest{
+			RouteName: NewsRouteName,
+			Path:      "/news",
+		},
+	)
 }
 
 // FindLastNews получает последнюю новость.
@@ -32,10 +28,15 @@ func (h *Handler) FindAllNews(c *fiber.Ctx) error {
 // @Description Возвращает последнюю новость.
 // @Tags news
 // @Produce json
-// @Success 200 {object} PostResponse
+// @Success 200 {object} domain.Post
 // @Router /api/news/last [get]
 func (h *Handler) FindLastNews(c *fiber.Ctx) error {
-	return h.proxyRequest(c, NewsRouteName, "/news/last")
+	return h.handleServiceRequest(
+		c, ServiceRequest{
+			RouteName: NewsRouteName,
+			Path:      "/news/last",
+		},
+	)
 }
 
 // FindLatestNews получает последние n новости.
@@ -44,13 +45,18 @@ func (h *Handler) FindLastNews(c *fiber.Ctx) error {
 // @Tags news
 // @Param limit path int false "Количество последних новостей" default(10)
 // @Produce json
-// @Success 200 {object} PostResponse
+// @Success 200 {object} domain.Post
 // @Router /api/news/latest/{limit} [get]
 func (h *Handler) FindLatestNews(c *fiber.Ctx) error {
 	limit := c.Params("limit", "10")
 	path := fmt.Sprintf("/news/latest/?=%s", limit)
 
-	return h.proxyRequest(c, NewsRouteName, path)
+	return h.handleServiceRequest(
+		c, ServiceRequest{
+			RouteName: NewsRouteName,
+			Path:      path,
+		},
+	)
 }
 
 // FindByIDNews получает новость по ID.
@@ -59,11 +65,73 @@ func (h *Handler) FindLatestNews(c *fiber.Ctx) error {
 // @Tags news
 // @Param id path string true "ID новости"
 // @Produce json
-// @Success 200 {object} PostResponse
+// @Success 200 {object} domain.PostWithComments
 // @Router /api/news/{id} [get]
 func (h *Handler) FindByIDNews(c *fiber.Ctx) error {
 	id := c.Params("id")
-	path := fmt.Sprintf("/news/%s", id)
 
-	return h.proxyRequest(c, NewsRouteName, path)
+	// Запрос к сервису новостей
+	newsService := ServiceRequest{RouteName: NewsRouteName, Path: fmt.Sprintf("/news/%s", id)}
+	newsBody, status, err := h.fetchProxyResponse(c, newsService)
+	if err != nil {
+		return c.Status(status).JSON(
+			fiber.Map{
+				"status":  "error",
+				"message": err.Error(),
+			},
+		)
+	}
+	if status >= 400 {
+		return c.Send(newsBody)
+	}
+
+	var newsResp struct {
+		Post dto.Post `json:"post"`
+	}
+
+	if err = json.Unmarshal(newsBody, &newsResp); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(
+			fiber.Map{
+				"status":  "error",
+				"message": "Failed to parse news data",
+			},
+		)
+	}
+
+	// Запрос к сервису комментариев
+	commentService := ServiceRequest{RouteName: CommentsRouteName, Path: fmt.Sprintf("/comments/news/%s", id)}
+	commentBody, status, err := h.fetchProxyResponse(c, commentService)
+	if err != nil {
+		return c.Status(status).JSON(
+			fiber.Map{
+				"status":  "error",
+				"message": err.Error(),
+			},
+		)
+	}
+	if status >= 400 {
+		return c.Send(commentBody)
+	}
+
+	var commentsResp struct {
+		Comments []dto.Comment `json:"comments"`
+	}
+
+	if err = json.Unmarshal(commentBody, &commentsResp); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(
+			fiber.Map{
+				"status":  "error",
+				"message": "Failed to parse comment data",
+			},
+		)
+	}
+
+	response := dto.FindByIDResponse{
+		Data: dto.PostWithComments{
+			Post:     newsResp.Post,
+			Comments: commentsResp.Comments,
+		},
+	}
+
+	return c.Status(fiber.StatusOK).JSON(response)
 }

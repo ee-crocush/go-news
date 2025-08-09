@@ -21,22 +21,23 @@ func LoggingMiddleware(log zerolog.Logger) fiber.Handler {
 
 		err := c.Next()
 		status := c.Response().StatusCode()
+		responseBody := c.Response().Body()
 		evt := log.With().
 			Str("request_id", ctx.Value("request_id").(string)).
 			Int("status_code", status).
 			Str("ip", ip).
 			Str("method", c.Method()).
 			Str("path", c.Path()).
-			Int("status_code", status).
+			RawJSON("request_body", c.Body()).
 			Logger()
 
 		switch {
 		case err != nil:
 			evt.Error().Err(err).Msg("Request failed")
 		case status >= 500:
-			evt.Error().Msg("Request completed with server error")
+			evt.Error().RawJSON("response", responseBody).Msg("Request completed with server error")
 		case status >= 400:
-			evt.Warn().Msg("Request completed with client error")
+			evt.Warn().RawJSON("response", responseBody).Msg("Request completed with client error")
 		default:
 			evt.Info().Msg("Request completed")
 		}

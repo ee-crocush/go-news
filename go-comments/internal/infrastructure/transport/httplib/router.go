@@ -12,7 +12,7 @@ func SetupRoutes(app *fiber.App, h *handler.Handler) {
 
 	commentsGroup := app.Group("/comments")
 	{
-		commentsGroup.Get("/", h.FindAllByNewsIDHandler)
+		commentsGroup.Get("/news/:id", h.FindAllByNewsIDHandler)
 		commentsGroup.Post("/", h.CreateHandler)
 	}
 }
