@@ -1,5 +1,5 @@
-// Package event содержит события на создание и изменение комментариев.
-package event
+// Package events содержит события на создание и изменение комментариев.
+package events
 
 import (
 	"encoding/json"
@@ -9,8 +9,6 @@ import (
 // CommentCreatedEvent - событие создания комментария для модерации.
 type CommentCreatedEvent struct {
 	CommentID int64     `json:"comment_id"`
-	NewsID    int32     `json:"news_id"`
-	Username  string    `json:"username"`
 	Content   string    `json:"content"`
 	CreatedAt time.Time `json:"created_at"`
 }
@@ -22,19 +20,11 @@ func (e *CommentCreatedEvent) ToJSON() ([]byte, error) {
 
 // CommentModerationResult - результат модерации комментария.
 type CommentModerationResult struct {
-	CommentID   int64     `json:"comment_id"`
-	Status      string    `json:"status"`           // "approved" или "rejected"
-	Reason      string    `json:"reason,omitempty"` // Причина отклонения
-	ProcessedAt time.Time `json:"processed_at"`
+	CommentID int64  `json:"comment_id"`
+	Status    string `json:"status"` // "approved" или "rejected"
 }
 
 // FromJSON создает результат модерации из JSON.
 func (r *CommentModerationResult) FromJSON(data []byte) error {
 	return json.Unmarshal(data, r)
 }
-
-// Константы для топиков Kafka.
-const (
-	TopicCommentCreated          = "comment.created"
-	TopicCommentModerationResult = "comment.moderation.result"
-)

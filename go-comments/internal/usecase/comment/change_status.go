@@ -4,23 +4,24 @@ import (
 	"context"
 	"fmt"
 	dom "github.com/ee-crocush/go-news/go-comments/internal/domain/comment"
+	"github.com/ee-crocush/go-news/go-comments/internal/infrastructure/events"
 )
 
 var _ ChangeStatusContract = (*ChangeStatusUseCase)(nil)
 
-// ChangeUseCase представляет структуру, реализующую бизнес-логику для изменения статуса комментария.
+// ChangeStatusUseCase представляет структуру, реализующую бизнес-логику для изменения статуса комментария.
 type ChangeStatusUseCase struct {
 	repo dom.Repository
 }
 
-// NewChangeUseCase создает новый экземпляр usecase для изменения статуса комментария.
+// NewChangeStatusUseCase создает новый экземпляр usecase для изменения статуса комментария.
 func NewChangeStatusUseCase(repo dom.Repository) *ChangeStatusUseCase {
 	return &ChangeStatusUseCase{repo: repo}
 }
 
 // Execute выполняет бизнес-логику изменения статуса комментария.
-func (uc *ChangeStatusUseCase) Execute(ctx context.Context, in StatusDTO) error {
-	commentID, err := dom.NewID(in.ID)
+func (uc *ChangeStatusUseCase) Execute(ctx context.Context, in events.CommentModerationResult) error {
+	commentID, err := dom.NewID(in.CommentID)
 	if err != nil {
 		return fmt.Errorf("ChangeUseCase.NewID: %w", err)
 	}

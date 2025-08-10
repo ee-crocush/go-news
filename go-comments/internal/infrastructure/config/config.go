@@ -63,12 +63,22 @@ type LoggingConfig struct {
 	EnableHTTPLogs bool   `yaml:"enable_http_logs" validate:"required"`
 }
 
+// KafkaConfig - конфигурация Kafka.
+type KafkaConfig struct {
+	Brokers              []string          `yaml:"brokers" validate:"required"`
+	Topics               map[string]string `yaml:"topics" validate:"required"`
+	ConsumerGroup        string            `yaml:"consumer_group" validate:"required"`
+	Partition            int               `yaml:"partition"`
+	LeaderReloadInterval time.Duration     `yaml:"leader_reload_interval" validate:"required"`
+}
+
 // Config основная конфигурация.
 type Config struct {
 	App     AppConfig     `yaml:"app"`
 	HTTP    HTTPConfig    `yaml:"http"`
 	DB      DBConfig      `yaml:"database"`
 	Logging LoggingConfig `yaml:"logging"`
+	Kafka   KafkaConfig   `yaml:"kafka"`
 }
 
 func (c *Config) GetAppName() string {
@@ -109,6 +119,13 @@ func (c *Config) EnableErrorHandling() bool {
 
 func (c *Config) EnableCors() bool {
 	return c.App.EnableCors
+}
+
+func (c *Config) GetTopic(name string) (string, error) {
+	if topic, ok := c.Kafka.Topics[name]; ok {
+		return topic, nil
+	}
+	return "", fmt.Errorf("topic %s not found", name)
 }
 
 // Validate валидация конфига.

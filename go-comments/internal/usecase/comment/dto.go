@@ -10,12 +10,6 @@ type AllByNewsIDDTO struct {
 	NewsID int32 `json:"news_id"`
 }
 
-// PublishDTO представляет входной DTO публикации/отклонения комментария.
-type StatusDTO struct {
-	ID     int64  `json:"id"`
-	Status string `json:"status"`
-}
-
 // CommentDTO представляет выходной DTO коммента.
 type CommentDTO struct {
 	ID       int64        `json:"id"`

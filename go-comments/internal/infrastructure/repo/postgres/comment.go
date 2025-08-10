@@ -21,21 +21,28 @@ func NewCommentRepository(pool *pgxpool.Pool) *CommentRepository {
 }
 
 // Create сохраняет комментарий.
-func (r *CommentRepository) Create(ctx context.Context, comment *dom.Comment) error {
+func (r *CommentRepository) Create(ctx context.Context, comment *dom.Comment) (dom.ID, error) {
 	const query = `
 		INSERT INTO comments (news_id, parent_id, user_name, content, created_at, status)
 		VALUES ($1, $2, $3, $4, $5, $6)
+		RETURNING id
 	`
 
-	_, err := r.pool.Exec(
+	var id int64
+	err := r.pool.QueryRow(
 		ctx, query, comment.NewsID().Value(), comment.ParentID().Value(), comment.Username().Value(),
 		comment.Content().Value(), comment.CreatedAt().Time().UTC().Unix(), comment.Status().Value(),
-	)
+	).Scan(&id)
 	if err != nil {
-		return fmt.Errorf("NewCommentRepository.Create: %w", err)
+		return dom.ID{}, fmt.Errorf("NewCommentRepository.Create: %w", err)
 	}
 
-	return nil
+	commentID, err := dom.NewID(id)
+	if err != nil {
+		return dom.ID{}, fmt.Errorf("NewCommentRepository.Create: %w", err)
+	}
+
+	return commentID, nil
 }
 
 // UpdateStatus публикует/отклоняет комментарий.

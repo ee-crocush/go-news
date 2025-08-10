@@ -30,3 +30,13 @@ logging:
   level: ${LOGGING_LEVEL}
   format: ${LOGGING_FORMAT}
   enable_http_logs: true
+
+kafka:
+  broker:
+    - ${KAFKA_BROKER_1}
+  topics:
+    comment_created: comments.created
+    comment_moderated: comments.moderated
+  consumer_group: comments_service_group
+  partition: 0
+  leader_reload_interval: 1m

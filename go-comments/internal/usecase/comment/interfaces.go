@@ -1,6 +1,9 @@
 package comment
 
-import "context"
+import (
+	"context"
+	"github.com/ee-crocush/go-news/go-comments/internal/infrastructure/events"
+)
 
 // CreateContract интерфейс для создания комментария.
 type CreateContract interface {
@@ -14,5 +17,5 @@ type FindAllByNewsIDContract interface {
 
 // ChangeStatusContract интерфейс для публикации/отклонения комментария.
 type ChangeStatusContract interface {
-	Execute(ctx context.Context, in StatusDTO) error
+	Execute(ctx context.Context, in events.CommentModerationResult) error
 }

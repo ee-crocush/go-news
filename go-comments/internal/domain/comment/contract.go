@@ -5,7 +5,7 @@ import "context"
 // Creator определяет контракт создания комментария.
 type Creator interface {
 	// Create создает комментарий.
-	Create(ctx context.Context, comment *Comment) error
+	Create(ctx context.Context, comment *Comment) (ID, error)
 }
 
 type Updater interface {
