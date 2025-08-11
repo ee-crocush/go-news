@@ -3,12 +3,10 @@ package comment
 import (
 	"context"
 	"fmt"
-	"github.com/ee-crocush/go-news/pkg/logger"
-	"time"
-
 	dom "github.com/ee-crocush/go-news/go-comments/internal/domain/comment"
 	"github.com/ee-crocush/go-news/go-comments/internal/infrastructure/events"
-	"github.com/ee-crocush/go-news/go-comments/internal/infrastructure/kafka"
+	"github.com/ee-crocush/go-news/pkg/kafka"
+	"github.com/ee-crocush/go-news/pkg/logger"
 )
 
 var _ CreateContract = (*CreateUseCase)(nil)
@@ -16,11 +14,11 @@ var _ CreateContract = (*CreateUseCase)(nil)
 // CreateUseCase представляет структуру, реализующую бизнес-логику для создания комментария.
 type CreateUseCase struct {
 	repo      dom.Repository
-	publisher kafka.EventPublisher
+	publisher *kafka.Publisher
 }
 
-// NewCreateUseCase создает новый экземпляр usecase для создания комментария.
-func NewCreateUseCase(repo dom.Repository, publisher kafka.EventPublisher) *CreateUseCase {
+// NewCreateUseCase создает новый экземпляр adapter для создания комментария.
+func NewCreateUseCase(repo dom.Repository, publisher *kafka.Publisher) *CreateUseCase {
 	return &CreateUseCase{repo: repo, publisher: publisher}
 }
 
@@ -31,6 +29,7 @@ func (uc *CreateUseCase) Execute(ctx context.Context, in CommentDTO) error {
 		return fmt.Errorf("CreateUseCase.NewComment: %w", err)
 	}
 
+	// Получаем родительский комментарий, если есть
 	if in.ParentID != nil {
 		parentID, err := dom.NewParentID(*in.ParentID)
 		if err != nil {
@@ -45,24 +44,27 @@ func (uc *CreateUseCase) Execute(ctx context.Context, in CommentDTO) error {
 		comment.SetParentID(parentID)
 	}
 
+	// Создаем комментарий
 	commentID, err := uc.repo.Create(ctx, comment)
 	if err != nil {
 		return fmt.Errorf("CreateUseCase.Create: %w", err)
 	}
 	comment.SetID(commentID)
 
-	event := &events.CommentCreatedEvent{
-		CommentID: comment.ID().Value(),
-		Content:   comment.Content().Value(),
-		CreatedAt: time.Now(),
+	// Публикуем в кафку событие для модерации
+	e := events.NewCommentCreatedEvent(comment.ID().Value(), comment.Content().Value())
+	data, err := e.ToJSON()
+	if err != nil {
+		return fmt.Errorf("CreateUseCase.ToJSON: %w", err)
 	}
+
 	// Логгируем тут, чтобы не пропустить косяк
-	if err = uc.publisher.PublishCommentCreated(ctx, event); err != nil {
+	if err = uc.publisher.Publish(ctx, fmt.Sprintf("%d", commentID.Value()), data); err != nil {
 		log := logger.GetLogger()
 		log.
 			Err(err).
 			Str("comment_id", fmt.Sprintf("%d", commentID.Value())).
-			Msg("Failed to publish comment created event")
+			Msg("Failed to publish comment created events")
 	}
 
 	return nil

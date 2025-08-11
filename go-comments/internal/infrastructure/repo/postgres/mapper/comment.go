@@ -1,4 +1,4 @@
-// Package mapper Переводит сущности в DTO и наоборот.
+// Package mapper содержит реализацию перевода сущности в DTO и наоборот.
 package mapper
 
 import (

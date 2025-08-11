@@ -1,4 +1,3 @@
-// Package comment выполняет бизнес-логику по комментариям.
 package comment
 
 import (

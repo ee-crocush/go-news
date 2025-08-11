@@ -93,7 +93,7 @@ func NewTime() CommentTime {
 // NewFromUnixSeconds создаёт Time из секунд.
 func NewFromUnixSeconds(s int64) (CommentTime, error) {
 	if s <= 0 {
-		return CommentTime{}, ErrEmptyTime
+		return CommentTime{}, nil
 	}
 
 	return CommentTime{value: time.Unix(s, 0)}, nil

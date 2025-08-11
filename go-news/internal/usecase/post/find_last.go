@@ -13,7 +13,7 @@ type FindLastUseCase struct {
 	repo dom.Repository
 }
 
-// NewFindLastUseCase создает новый экземпляр usecase для поиска последней новости.
+// NewFindLastUseCase создает новый экземпляр adapter для поиска последней новости.
 func NewFindLastUseCase(repo dom.Repository) *FindLastUseCase {
 	return &FindLastUseCase{repo: repo}
 }

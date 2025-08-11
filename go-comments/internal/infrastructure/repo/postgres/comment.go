@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	dom "github.com/ee-crocush/go-news/go-comments/internal/domain/comment"
 	"github.com/ee-crocush/go-news/go-comments/internal/infrastructure/repo/postgres/mapper"
@@ -71,16 +72,23 @@ func (r *CommentRepository) UpdateStatus(
 // FindByID находит комментарий по его ID.
 func (r *CommentRepository) FindByID(ctx context.Context, id dom.ID) (*dom.Comment, error) {
 	var row mapper.CommentRow
+	var pubTime sql.NullInt64
 
 	const query = `
 		SELECT id, news_id, parent_id, user_name, content, pub_time, status
 		FROM comments WHERE id=$1 LIMIT 1`
 
 	err := r.pool.QueryRow(ctx, query, id.Value()).Scan(
-		&row.ID, &row.NewsID, &row.ParentID, &row.Username, &row.Content, &row.PubTime, &row.Status,
+		&row.ID, &row.NewsID, &row.ParentID, &row.Username, &row.Content, &pubTime, &row.Status,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("CommentRepository.FindByID: %w", err)
+	}
+
+	if pubTime.Valid {
+		row.PubTime = pubTime.Int64
+	} else {
+		row.PubTime = 0
 	}
 
 	return mapper.MapRowToComment(row)

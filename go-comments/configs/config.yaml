@@ -32,7 +32,7 @@ logging:
   enable_http_logs: true
 
 kafka:
-  broker:
+  brokers:
     - ${KAFKA_BROKER_1}
   topics:
     comment_created: comments.created

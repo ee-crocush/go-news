@@ -15,7 +15,7 @@ type FindByIDUseCase struct {
 	repo dom.Repository
 }
 
-// NewFindByIDUseCase создает новый экземпляр usecase для поиска новости по ID.
+// NewFindByIDUseCase создает новый экземпляр adapter для поиска новости по ID.
 func NewFindByIDUseCase(repo dom.Repository) *FindByIDUseCase {
 	return &FindByIDUseCase{repo: repo}
 }

@@ -1,4 +1,4 @@
-// Package usecase выполняет бизнес-логику приложения.
+// Package adapter выполняет бизнес-логику приложения.
 package post
 
 import (

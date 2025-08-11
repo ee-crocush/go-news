@@ -13,7 +13,7 @@ type FindAllUseCase struct {
 	repo dom.Repository
 }
 
-// NewFindAllUseCase создает новый экземпляр usecase для поиска всех новостей.
+// NewFindAllUseCase создает новый экземпляр adapter для поиска всех новостей.
 func NewFindAllUseCase(repo dom.Repository) *FindAllUseCase {
 	return &FindAllUseCase{repo: repo}
 }

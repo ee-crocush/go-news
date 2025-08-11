@@ -21,7 +21,7 @@ type parseAndStoreUseCase struct {
 	parser Parser
 }
 
-// NewParseAndStoreUseCase создает новый экземпляр usecase для парсинга и сохранения RSS.
+// NewParseAndStoreUseCase создает новый экземпляр adapter для парсинга и сохранения RSS.
 func NewParseAndStoreUseCase(repo dom.Repository, parser Parser) ParseAndStoreUseCase {
 	return &parseAndStoreUseCase{repo: repo, parser: parser}
 }

@@ -1,0 +1,15 @@
+app:
+  name: ${APP_NAME}
+  version: ${APP_VERSION}
+
+logging:
+  level: ${LOGGING_LEVEL}
+  format: ${LOGGING_FORMAT}
+
+kafka:
+  brokers:
+    - ${KAFKA_BROKER_1}
+  topics:
+    comment_created: comments.created
+    comment_moderated: comments.moderated
+  consumer_group: comments_created_service_group

@@ -14,7 +14,7 @@ type FindAllByNewsIDUseCase struct {
 	repo dom.Repository
 }
 
-// NewFindAllByNewsIDUseCase создает новый экземпляр usecase для поиска всех комментариев.
+// NewFindAllByNewsIDUseCase создает новый экземпляр adapter для поиска всех комментариев.
 func NewFindAllByNewsIDUseCase(repo dom.Repository) *FindAllByNewsIDUseCase {
 	return &FindAllByNewsIDUseCase{repo: repo}
 }

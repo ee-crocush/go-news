@@ -1,8 +1,9 @@
+// Package comment выполняет бизнес-логику по комментариям.
 package comment
 
 import (
 	"context"
-	"github.com/ee-crocush/go-news/go-comments/internal/infrastructure/events"
+	"github.com/segmentio/kafka-go"
 )
 
 // CreateContract интерфейс для создания комментария.
@@ -17,5 +18,5 @@ type FindAllByNewsIDContract interface {
 
 // ChangeStatusContract интерфейс для публикации/отклонения комментария.
 type ChangeStatusContract interface {
-	Execute(ctx context.Context, in events.CommentModerationResult) error
+	Execute(ctx context.Context, msg kafka.Message) error
 }

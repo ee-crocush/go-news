@@ -1,3 +1,4 @@
+// Package config содержит настройки приложения.
 package config
 
 import (
