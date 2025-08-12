@@ -42,7 +42,7 @@ func (h *Handler) CreateHandler(c *fiber.Ctx) error {
 	}
 
 	if err := h.createUC.Execute(c.Context(), dto); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(api.Err(err))
+		return c.Status(fiber.StatusBadRequest).JSON(api.Err(err))
 	}
 
 	response := CreateRequestResponse{

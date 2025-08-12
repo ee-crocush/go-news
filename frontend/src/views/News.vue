@@ -7,7 +7,7 @@
       <v-card-title>Управление новостями</v-card-title>
       <v-card-text>
         <v-row>
-          <v-col cols="12" md="6">
+          <v-col cols="12" md="4">
             <v-btn
                 @click="getAllNews"
                 color="primary"
@@ -27,48 +27,37 @@
             </v-btn>
           </v-col>
 
-          <v-col cols="12" md="6">
+          <v-col cols="12" md="4">
             <v-text-field
-                v-model="limitCount"
-                label="Количество новостей"
-                type="number"
-                min="1"
+                v-model="search"
+                label="Поиск по новостям"
                 dense
                 outlined
                 class="ma-2"
+                clearable
             ></v-text-field>
             <v-btn
-                @click="getLatestNews"
-                color="success"
+                @click="searchNews"
+                color="info"
                 class="ma-2"
                 :loading="loading"
-                :disabled="!limitCount || limitCount < 1"
+                :disabled="!search"
             >
-              Получить последние {{ limitCount || 'N' }} новостей
+              Найти новости
             </v-btn>
           </v-col>
-        </v-row>
 
-        <v-row>
-          <v-col cols="12" md="6">
+          <v-col cols="12" md="4">
             <v-text-field
-                v-model="newsId"
-                label="ID новости"
+                v-model="limitCount"
+                label="Новостей на странице"
                 type="number"
                 min="1"
+                max="100"
                 dense
                 outlined
                 class="ma-2"
             ></v-text-field>
-            <v-btn
-                @click="getNewsById"
-                color="warning"
-                class="ma-2"
-                :loading="loading"
-                :disabled="!newsId || newsId < 1"
-            >
-              Получить новость по ID {{ newsId || 'X' }}
-            </v-btn>
           </v-col>
         </v-row>
       </v-card-text>
@@ -109,90 +98,110 @@
     <div v-else>
       <v-card class="mx-5 my-3" elevation="2">
         <v-card-text class="d-flex justify-space-between align-center">
-          <h3>Найдено новостей: {{ news.length }}</h3>
-          <div v-if="news.length > itemsPerPage">
+          <h3>Найдено новостей: {{ totalNews }}</h3>
+          <div v-if="totalPages > 1">
             Страница {{ currentPage }} из {{ totalPages }}
-            (показано {{ paginatedNews.length }} из {{ news.length }})
           </div>
         </v-card-text>
       </v-card>
 
-      <!-- Пагинация сверху (если много новостей) -->
+      <!-- Пагинация сверху -->
       <div v-if="totalPages > 1" class="text-center ma-3">
         <v-pagination
             v-model="currentPage"
             :length="totalPages"
             :total-visible="7"
             color="primary"
-        ></v-pagination>
+            @update:modelValue="loadPage"
+        />
       </div>
 
       <!-- Список новостей -->
-      <div v-for="post in paginatedNews" :key="post.id">
+      <div v-for="post in news" :key="post.id">
         <v-card elevation="10" outlined class="mx-5 my-5">
           <v-card-title>
-            <a :href="post.link" target="_blank"> {{ post.title }} </a>
+            {{ post.title }}
           </v-card-title>
           <v-card-text>
             {{ post.content }}
             <v-card-subtitle>
               ID: {{ post.id }} | {{ post.pub_time }}
             </v-card-subtitle>
+
+            <div class="mt-3">
+              <v-btn
+                  color="primary"
+                  class="mr-2"
+                  @click="goToNewsDetail(post.id)"
+              >
+                Перейти
+              </v-btn>
+              <v-btn
+                  color="secondary"
+                  :href="post.link"
+                  target="_blank"
+                  v-if="post.link"
+              >
+                Перейти к источнику
+              </v-btn>
+            </div>
           </v-card-text>
         </v-card>
       </div>
 
-      <!-- Пагинация снизу (если много новостей) -->
+      <!-- Пагинация снизу -->
       <div v-if="totalPages > 1" class="text-center ma-3">
         <v-pagination
             v-model="currentPage"
             :length="totalPages"
             :total-visible="7"
             color="primary"
-        ></v-pagination>
+            @update:modelValue="loadPage"
+        />
       </div>
     </div>
   </div>
 </template>
 
 <script>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
+import { useRouter } from 'vue-router'
 
 export default {
   name: "News",
   setup() {
+    const router = useRouter()
+
     // Реактивные переменные
     const news = ref([])
     const loading = ref(false)
     const error = ref('')
     const info = ref('')
-    const limitCount = ref(null)
-    const newsId = ref(null)
+    const limitCount = ref(10)
+    const search = ref('')
     const currentPage = ref(1)
-    const itemsPerPage = ref(10)
+    const totalPages = ref(1)
+    const totalNews = ref(0)
 
     // Получение baseUrl из переменных окружения
     const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'
 
-    // Вычисляемые свойства
-    const totalPages = computed(() => {
-      return Math.ceil(news.value.length / itemsPerPage.value)
-    })
-
-    const paginatedNews = computed(() => {
-      const start = (currentPage.value - 1) * itemsPerPage.value
-      const end = start + itemsPerPage.value
-      return news.value.slice(start, end)
-    })
-
     // Методы
-    const fetchNews = async (endpoint, successMessage = '', expectWrapped = false) => {
+    const fetchNews = async (endpoint, params = {}, successMessage = '') => {
       loading.value = true
       error.value = ''
       info.value = ''
 
       try {
-        const url = baseUrl + endpoint
+        const url = new URL(baseUrl + endpoint)
+
+        // Добавляем параметры запроса
+        Object.keys(params).forEach(key => {
+          if (params[key] !== null && params[key] !== undefined && params[key] !== '') {
+            url.searchParams.append(key, params[key])
+          }
+        })
+
         const response = await fetch(url)
 
         if (!response.ok) {
@@ -201,71 +210,93 @@ export default {
 
         const data = await response.json()
 
-        if (expectWrapped) {
-          // Для /news и /news/latest?limit= - данные в формате {posts: [...]}
-          if (data && data.posts && Array.isArray(data.posts)) {
-            news.value = data.posts
-          } else {
-            news.value = []
-          }
+        // API возвращает данные в формате {posts: [...], total: number}
+        if (data && data.data.news && Array.isArray(data.data.news)) {
+          news.value = data.data.news
+          totalNews.value = data.data.total || data.data.news.length
+
+          // Вычисляем общее количество страниц
+          totalPages.value = Math.ceil(totalNews.value / limitCount.value)
+        } else if (Array.isArray(data.data)) {
+          news.value = data
+          totalNews.value = data.length
+          totalPages.value = 1
+        } else if (data.data && data.data.post && typeof data.data.post === 'object') {
+          // Если получили один объект, оборачиваем в массив
+          news.value = [data.data.post]
+          totalNews.value = 1
+          totalPages.value = 1
         } else {
-          // Для /news/last и /news/id - возвращается напрямую объект новости
-          if (Array.isArray(data)) {
-            news.value = data
-          } else if (data && typeof data === 'object') {
-            // Если получили один объект, оборачиваем в массив
-            news.value = [data]
-          } else {
-            news.value = []
-          }
+          news.value = []
+          totalNews.value = 0
+          totalPages.value = 1
         }
 
         if (successMessage) {
           info.value = successMessage
         }
 
-        // Сбрасываем на первую страницу при новой загрузке
-        currentPage.value = 1
-
       } catch (err) {
         error.value = `Ошибка при загрузке новостей: ${err.message}`
         news.value = []
+        totalNews.value = 0
+        totalPages.value = 1
       } finally {
         loading.value = false
       }
     }
 
     const getAllNews = () => {
-      fetchNews('/news', 'Загружены все новости', true)
+      const params = {
+        page: 1,
+        limit: limitCount.value
+      }
+      currentPage.value = 1
+      fetchNews('/news', params, 'Загружены все новости')
     }
 
     const getLastNews = () => {
-      fetchNews('/news/last', 'Загружена последняя новость', false)
+      fetchNews('/news/last', {}, 'Загружена последняя новость')
     }
 
-    const getLatestNews = () => {
-      if (!limitCount.value || limitCount.value < 1) {
-        error.value = 'Укажите корректное количество новостей'
+    const searchNews = () => {
+      if (!search.value) {
+        error.value = 'Введите поисковый запрос'
         return
       }
-      fetchNews(
-          `/news/latest?limit=${limitCount.value}`,
-          `Загружены последние ${limitCount.value} новостей`,
-          true
-      )
+      const params = {
+        page: 1,
+        limit: limitCount.value,
+        search: search.value
+      }
+      currentPage.value = 1
+      fetchNews('/news', params, `Найдены новости по запросу: ${search.value}`)
     }
 
-    const getNewsById = () => {
-      if (!newsId.value || newsId.value < 1) {
-        error.value = 'Укажите корректный ID новости'
-        return
+    const loadPage = (page) => {
+      currentPage.value = page
+      const params = {
+        page: page,
+        limit: limitCount.value
       }
-      fetchNews(
-          `/news/${newsId.value}`,
-          `Загружена новость с ID ${newsId.value}`,
-          false
-      )
+
+      if (search.value) {
+        params.search = search.value
+      }
+
+      fetchNews('/news', params)
     }
+
+    const goToNewsDetail = (newsId) => {
+      router.push(`/news/${newsId}`)
+    }
+
+    watch(limitCount, (newVal, oldVal) => {
+      if (newVal !== oldVal && newVal > 0) {
+        currentPage.value = 1
+        loadPage(1)
+      }
+    })
 
     return {
       // Реактивные переменные
@@ -274,19 +305,17 @@ export default {
       error,
       info,
       limitCount,
-      newsId,
+      search,
       currentPage,
-      itemsPerPage,
-
-      // Вычисляемые свойства
       totalPages,
-      paginatedNews,
+      totalNews,
 
       // Методы
       getAllNews,
       getLastNews,
-      getLatestNews,
-      getNewsById
+      searchNews,
+      loadPage,
+      goToNewsDetail
     }
   }
 }

@@ -1,22 +1,13 @@
 <template>
   <v-app>
     <v-main>
-      <News/>
+      <router-view />
     </v-main>
   </v-app>
 </template>
 
 <script>
-import News from './components/News.vue'
-
 export default {
-  name: "App",
-  components: {
-    News,
-  },
-
-  data: () => ({
-    //
-  }),
-};
+  name: "App"
+}
 </script>
