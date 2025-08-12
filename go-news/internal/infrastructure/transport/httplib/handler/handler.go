@@ -23,7 +23,7 @@ type FindLatestPostExecutor interface {
 
 // FindAllPostExecutor интерфейс для поиска всех новостей.
 type FindAllPostExecutor interface {
-	Execute(ctx context.Context, in uc.FindAllInputDTO) ([]uc.PostDTO, error)
+	Execute(ctx context.Context, in uc.FindAllInputDTO) ([]uc.PostDTO, int32, error)
 }
 
 // Handler представляет HTTP-handler для работы с новостями.

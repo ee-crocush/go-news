@@ -2,6 +2,7 @@ package kafka
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/ee-crocush/go-news/pkg/logger"
 
@@ -45,6 +46,11 @@ func (c *Consumer) Start(ctx context.Context) error {
 		default:
 			msg, err := c.reader.FetchMessage(ctx)
 			if err != nil {
+				if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+					// просто ждём дальше
+					continue
+				}
+
 				return fmt.Errorf("failed to fetch message: %w", err)
 			}
 

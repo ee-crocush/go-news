@@ -49,7 +49,7 @@ func Run(cfg config.Config) error {
 
 	// Запускаем сервер
 	serverManager := server.NewServerManager(fiberServer)
-	return serverManager.StartAll()
+	return serverManager.StartAll(nil)
 }
 
 func connectDB(cfg config.Config) (*mongo.Client, *mongo.Database, error) {

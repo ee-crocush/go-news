@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/ee-crocush/go-news/pkg/kafka"
 	"os"
 	"os/signal"
 	"sync"
@@ -15,7 +16,7 @@ import (
 var ErrNoServers = errors.New("no servers to start")
 
 // serverTimeout время таймаута сервера.
-const serverTimeout = 10 * time.Second
+const serverTimeout = 30 * time.Second
 
 // GracefulServer — интерфейс для серверов, которые поддерживают
 // блокирующий запуск и корректное завершение (shutdown).
@@ -35,10 +36,13 @@ func NewServerManager(servers ...GracefulServer) *ServerManager {
 }
 
 // StartAll запускает все сервера с graceful shutdown.
-func (sm *ServerManager) StartAll() error {
+func (sm *ServerManager) StartAll(consumer *kafka.Consumer) error {
 	if len(sm.servers) == 0 {
 		return ErrNoServers
 	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), serverTimeout)
+	defer cancel()
 
 	errChan := make(chan error, len(sm.servers))
 	var wg sync.WaitGroup
@@ -53,27 +57,44 @@ func (sm *ServerManager) StartAll() error {
 		}(srv)
 	}
 
+	// Не забываем про кафку
+	if consumer != nil {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			ctxConsumer, cancelConsumer := context.WithCancel(context.Background())
+			defer cancelConsumer()
+			if err := consumer.Start(ctxConsumer); err != nil {
+				errChan <- err
+			}
+		}()
+	}
+
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 
 	select {
 	case err := <-errChan:
-		sm.shutdownAll()
+		sm.shutdownAll(ctx)
+		if consumer != nil {
+			consumer.Close()
+		}
 		wg.Wait()
 		return err
 	case <-sigChan:
 		fmt.Println("Received shutdown signal")
-		sm.shutdownAll()
+		if consumer != nil {
+			fmt.Println("Shutting kafka consumer...")
+			consumer.Close()
+		}
+		sm.shutdownAll(ctx)
 		wg.Wait()
 		return nil
 	}
 }
 
 // shutdownAll корректно завершает все сервера.
-func (sm *ServerManager) shutdownAll() {
-	ctx, cancel := context.WithTimeout(context.Background(), serverTimeout)
-	defer cancel()
-
+func (sm *ServerManager) shutdownAll(ctx context.Context) {
 	var wg sync.WaitGroup
 	wg.Add(len(sm.servers))
 

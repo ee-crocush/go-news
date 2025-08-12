@@ -116,7 +116,7 @@ func (r *CommentRepository) FindAllByNewsID(ctx context.Context, newsID dom.News
 		var row mapper.CommentRow
 
 		if err = rows.Scan(
-			&row.ID, &row.NewsID, &row.ParentID, &row.Username, &row.Content, &row.PubTime,
+			&row.ID, &row.NewsID, &row.ParentID, &row.Username, &row.Content, &row.PubTime, &row.Status,
 		); err != nil {
 			return nil, fmt.Errorf("CommentRepository.FindAll: %w", err)
 		}

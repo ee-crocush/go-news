@@ -26,5 +26,5 @@ func Run(cfg *config.Config) error {
 
 	serverManager := server.NewServerManager(fiberServer)
 
-	return serverManager.StartAll()
+	return serverManager.StartAll(nil)
 }

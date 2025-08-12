@@ -2,7 +2,6 @@
 package app
 
 import (
-	"context"
 	"fmt"
 	"github.com/ee-crocush/go-news/go-comments/internal/infrastructure/config"
 	repo "github.com/ee-crocush/go-news/go-comments/internal/infrastructure/repo/postgres"
@@ -10,14 +9,9 @@ import (
 	"github.com/ee-crocush/go-news/go-comments/internal/infrastructure/transport/httplib/handler"
 	uc "github.com/ee-crocush/go-news/go-comments/internal/usecase/comment"
 	"github.com/ee-crocush/go-news/pkg/kafka"
-	"github.com/ee-crocush/go-news/pkg/logger"
 	"github.com/ee-crocush/go-news/pkg/server"
 	commonFiber "github.com/ee-crocush/go-news/pkg/server/fiber"
 	"github.com/gofiber/fiber/v2"
-	"github.com/rs/zerolog"
-	"os"
-	"os/signal"
-	"syscall"
 )
 
 // Run запускает HTTP сервер и инициализирует все необходимые компоненты.
@@ -39,17 +33,10 @@ func Run(cfg config.Config) error {
 		},
 	)
 
-	log := logger.GetLogger()
-
 	consumer, err := initConsumer(cfg, repository)
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	gracefulShutdownConsumer(ctx, consumer, log)
-
 	// Запускаем сервер
 	serverManager := server.NewServerManager(fiberServer)
-	return serverManager.StartAll()
+	return serverManager.StartAll(consumer)
 }
 
 // connectDB выполняет подключение к БД.
@@ -95,20 +82,4 @@ func initConsumer(cfg config.Config, repository *repo.CommentRepository) (*kafka
 	consumer := kafka.NewConsumer(cfg.Kafka.Brokers, topic, cfg.Kafka.ConsumerGroup, updateStatusUC)
 
 	return consumer, nil
-}
-
-// gracefulShutdownConsumer реализация gracefulShutdown для kafka.Consumer
-func gracefulShutdownConsumer(ctx context.Context, consumer *kafka.Consumer, log *zerolog.Logger) {
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
-
-	go func() {
-		if err := consumer.Start(ctx); err != nil {
-			log.Fatal().Err(err).Msg("Kafka consumer error")
-		}
-	}()
-
-	<-sigChan
-	fmt.Println("Shutting kafka consumer...")
-	consumer.Close()
 }

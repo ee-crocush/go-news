@@ -101,7 +101,9 @@ func (r *PostRepository) FindLatest(ctx context.Context, limit int) ([]*dom.Post
 }
 
 // FindAll получает все новости.
-func (r *PostRepository) FindAll(ctx context.Context, search string, limit, offset int) ([]*dom.Post, error) {
+func (r *PostRepository) FindAll(ctx context.Context, search string, limit, offset int) (
+	[]*dom.Post, int32, error,
+) {
 	ctx, cancel := context.WithTimeout(ctx, r.timeout)
 	defer cancel()
 
@@ -110,15 +112,23 @@ func (r *PostRepository) FindAll(ctx context.Context, search string, limit, offs
 		filter["title"] = bson.M{"$regex": search, "$options": "i"}
 	}
 
+	// Получаем общее количество документов по фильтру
+	total, err := r.collection.CountDocuments(ctx, filter)
+	if err != nil {
+		return nil, 0, fmt.Errorf("PostRepository.FindAll count: %w", err)
+	}
+
 	opts := options.Find().SetSort(bson.D{{Key: "pub_time", Value: -1}}).SetLimit(int64(limit)).SetSkip(int64(offset))
 
 	cursor, err := r.collection.Find(ctx, filter, opts)
 	if err != nil {
-		return nil, fmt.Errorf("PostRepository.FindAll: %w", err)
+		return nil, 0, fmt.Errorf("PostRepository.FindAll: %w", err)
 	}
 	defer cursor.Close(ctx)
 
-	return r.decodeManyPosts(ctx, cursor)
+	posts, err := r.decodeManyPosts(ctx, cursor)
+
+	return posts, int32(total), err
 }
 
 // getNextID возвращает следующее значение идентификатора.

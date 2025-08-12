@@ -9,7 +9,8 @@ import (
 
 // FindAllResponse представляет ответ на запрос получения всех постов.
 type FindAllResponse struct {
-	News []PostDTO `json:"news"`
+	News  []PostDTO `json:"news"`
+	Total int32     `json:"total"`
 }
 
 // FindAllHandler обрабатывает запрос (GET /news).
@@ -33,7 +34,7 @@ func (h *Handler) FindAllHandler(c *fiber.Ctx) error {
 		Limit:  limit,
 		Page:   page,
 	}
-	out, err := h.findAllUC.Execute(c.Context(), in)
+	out, total, err := h.findAllUC.Execute(c.Context(), in)
 
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(api.Err(err))
@@ -41,8 +42,9 @@ func (h *Handler) FindAllHandler(c *fiber.Ctx) error {
 
 	news := MapNewsToNewsDTO(out)
 
-	resp := FindLatestResponse{
-		News: news,
+	resp := FindAllResponse{
+		News:  news,
+		Total: total,
 	}
 
 	return c.Status(fiber.StatusOK).JSON(api.Resp(resp))
