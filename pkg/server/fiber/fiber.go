@@ -63,8 +63,9 @@ func NewFiberApp(config Config) *fiber.App {
 		app.Use(
 			cors.New(
 				cors.Config{
-					AllowOrigins: "http://localhost, http://127.0.0.1",
+					AllowOrigins: "http://localhost,http://127.0.0.1,http://localhost:5173,http://127.0.0.1:5173",
 					AllowHeaders: "Origin, Content-Type, Accept, Authorization",
+					AllowMethods: "GET,POST,PUT,DELETE,OPTIONS",
 				},
 			),
 		)
