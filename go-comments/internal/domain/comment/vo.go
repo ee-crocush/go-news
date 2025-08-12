@@ -7,7 +7,7 @@ type ID struct {
 	value int64
 }
 
-// NewID создает новый идентификатор комментария.
+// NewID создает новый идентификатор комментария ID.
 func NewID(id int64) (ID, error) {
 	if id < 1 {
 		return ID{}, ErrInvalidCommentID
@@ -29,7 +29,7 @@ type NewsID struct {
 // Value возвращает значение идентификатора комментария.
 func (c NewsID) Value() int32 { return c.value }
 
-// NewNewsID создает новый идентификатор новости.
+// NewNewsID создает новый идентификатор новости NewsID.
 func NewNewsID(id int32) (NewsID, error) {
 	if id < 1 {
 		return NewsID{}, ErrInvalidNewsID
@@ -42,7 +42,7 @@ type ParentID struct {
 	value *int64
 }
 
-// NewParentID создает новый идентификатор родительского комментария.
+// NewParentID создает новый идентификатор родительского комментария ParentID.
 func NewParentID(id int64) (ParentID, error) {
 	if id < 1 {
 		return ParentID{}, ErrInvalidParentID
@@ -68,7 +68,7 @@ type Content struct {
 	value string
 }
 
-// NewContent создает содержание комментария.
+// NewContent создает содержание комментария Content.
 func NewContent(text string) (Content, error) {
 	if len(text) > 0 {
 		return Content{text}, nil
@@ -85,12 +85,12 @@ type CommentTime struct {
 	value time.Time
 }
 
-// NewTime создает время публикации комментария.
+// NewTime создает время публикации комментария CommentTime.
 func NewTime() CommentTime {
 	return CommentTime{time.Now().UTC()}
 }
 
-// NewFromUnixSeconds создаёт Time из секунд.
+// NewFromUnixSeconds создаёт CommentTime из секунд.
 func NewFromUnixSeconds(s int64) (CommentTime, error) {
 	if s <= 0 {
 		return CommentTime{}, nil
@@ -114,7 +114,7 @@ type UserName struct {
 	value string
 }
 
-// NewUserName создает пользователя, оставившего комментарий.
+// NewUserName создает пользователя UserName, оставившего комментарий.
 func NewUserName(text string) (UserName, error) {
 	if len(text) > 6 && len(text) < 50 {
 		return UserName{text}, nil

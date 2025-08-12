@@ -8,7 +8,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 )
 
-// Init инициализирует и возвращает новый экземпляр пула соединений PostgreSQL.
+// Init инициализирует и возвращает новый экземпляр пула соединений PostgreSQL pgxpool.Pool.
 func Init(cfg config.Config) (*pgxpool.Pool, error) {
 	dbURL := cfg.DB.DSN()
 
@@ -37,7 +37,7 @@ func Init(cfg config.Config) (*pgxpool.Pool, error) {
 	return pool, nil
 }
 
-// newPGXPool создаёт пул соединений к PostgreSQL с помощью pgxpool.
+// newPGXPool создаёт пул соединений pgxpool.Pool к PostgreSQL с помощью pgxpool.
 func newPGXPool(dsn string) (*pgxpool.Pool, error) {
 	cfg, err := pgxpool.ParseConfig(dsn)
 	if err != nil {

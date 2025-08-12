@@ -5,6 +5,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+// HealthCheckHandler хендлер для обработки жизнеспособности сервиса
 func (h *Handler) HealthCheckHandler(c *fiber.Ctx) error {
 	err := c.Status(fiber.StatusOK).JSON(
 		fiber.Map{

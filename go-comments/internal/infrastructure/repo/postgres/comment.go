@@ -16,7 +16,7 @@ type CommentRepository struct {
 	pool *pgxpool.Pool
 }
 
-// NewCommentRepository создаёт новый PostgreSQL-репозиторий с комментариями.
+// NewCommentRepository создаёт новый PostgreSQL-репозиторий CommentRepository с комментариями.
 func NewCommentRepository(pool *pgxpool.Pool) *CommentRepository {
 	return &CommentRepository{pool: pool}
 }

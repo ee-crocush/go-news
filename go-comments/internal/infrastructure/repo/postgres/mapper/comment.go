@@ -17,7 +17,7 @@ type CommentRow struct {
 	Status   string `json:"status"`
 }
 
-// MapRowToComment - функция для маппинга комментария из PostgreSQL.
+// MapRowToComment - функция для маппинга комментария из PostgreSQL CommentRow в dom.Comment
 func MapRowToComment(row CommentRow) (*dom.Comment, error) {
 	id, err := dom.NewID(row.ID)
 	if err != nil {

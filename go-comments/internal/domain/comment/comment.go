@@ -18,7 +18,7 @@ type Comment struct {
 	children  []*Comment
 }
 
-// NewComment создает новый комментарий.
+// NewComment создает новый комментарий Comment.
 func NewComment(newsID int32, username, content string) (*Comment, error) {
 	newsIDVO, err := NewNewsID(newsID)
 	if err != nil {
@@ -103,7 +103,7 @@ func (c *Comment) SetStatus(status Status) {
 	c.status = status
 }
 
-// RehydrateComment — вспомогательный конструктор для «восстановления» сущности из БД.
+// RehydrateComment — вспомогательный конструктор для «восстановления» сущности Comment из БД.
 func RehydrateComment(
 	id ID, newsID NewsID, parentID ParentID, username UserName, content Content, pubTime CommentTime, status Status,
 ) *Comment {

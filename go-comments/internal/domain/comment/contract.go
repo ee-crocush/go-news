@@ -8,6 +8,7 @@ type Creator interface {
 	Create(ctx context.Context, comment *Comment) (ID, error)
 }
 
+// Updater определяет контракт изменения комментария.
 type Updater interface {
 	// UpdateStatus публикует/отклоняет комментарий.
 	UpdateStatus(ctx context.Context, id ID, status Status, pubTime *CommentTime) error

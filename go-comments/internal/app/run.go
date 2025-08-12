@@ -52,6 +52,7 @@ func Run(cfg config.Config) error {
 	return serverManager.StartAll()
 }
 
+// connectDB выполняет подключение к БД.
 func connectDB(cfg config.Config) (*repo.CommentRepository, error) {
 	pgxPool, err := repo.Init(cfg)
 	if err != nil {
@@ -83,7 +84,7 @@ func initHandler(cfg config.Config, repository *repo.CommentRepository) (*handle
 	return handler.NewHandler(commentCreateUC, commentFindAllUC), nil
 }
 
-// initConsumer создаем consumer кафки для получения результатов модерации.
+// initConsumer создает consumer кафки для получения результатов модерации.
 func initConsumer(cfg config.Config, repository *repo.CommentRepository) (*kafka.Consumer, error) {
 	topic, err := cfg.GetTopic("comment_moderated")
 	if err != nil {
@@ -96,6 +97,7 @@ func initConsumer(cfg config.Config, repository *repo.CommentRepository) (*kafka
 	return consumer, nil
 }
 
+// gracefulShutdownConsumer реализация gracefulShutdown для kafka.Consumer
 func gracefulShutdownConsumer(ctx context.Context, consumer *kafka.Consumer, log *zerolog.Logger) {
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)

@@ -19,7 +19,7 @@ type Handler struct {
 	httpClient *http.Client
 }
 
-// NewHandler создает новый экземпляр HTTP-handler.
+// NewHandler создает новый экземпляр Handler.
 func NewHandler(registry registry.RegistryService, timeout time.Duration) *Handler {
 	return &Handler{
 		registry:   registry,
@@ -27,11 +27,13 @@ func NewHandler(registry registry.RegistryService, timeout time.Duration) *Handl
 	}
 }
 
+// ServiceRequest структура агрегирующая сервис и маршрут
 type ServiceRequest struct {
 	RouteName string
 	Path      string
 }
 
+// handleServiceRequest выполняет proxy запрос
 func (h *Handler) handleServiceRequest(c *fiber.Ctx, r ServiceRequest) error {
 	body, status, err := h.fetchProxyResponse(c, r)
 	if err != nil {
@@ -60,6 +62,7 @@ func (h *Handler) handleServiceRequest(c *fiber.Ctx, r ServiceRequest) error {
 	return c.Status(status).JSON(raw)
 }
 
+// fetchProxyResponse выполняет простой proxy запрос
 func (h *Handler) fetchProxyResponse(c *fiber.Ctx, r ServiceRequest) ([]byte, int, error) {
 	url, err := h.buildProxyURL(r.RouteName, r.Path, c)
 	if err != nil {
@@ -87,6 +90,7 @@ func (h *Handler) fetchProxyResponse(c *fiber.Ctx, r ServiceRequest) ([]byte, in
 	return body, resp.StatusCode, nil
 }
 
+// buildProxyURL строит прокси URL
 func (h *Handler) buildProxyURL(routeName, path string, c *fiber.Ctx) (string, error) {
 	route, ok := h.registry.GetRouteByName(routeName)
 	if !ok {
@@ -101,6 +105,7 @@ func (h *Handler) buildProxyURL(routeName, path string, c *fiber.Ctx) (string, e
 	return url, nil
 }
 
+// createProxyRequest создает proxy запрос
 func (h *Handler) createProxyRequest(c *fiber.Ctx, url string) (*http.Request, error) {
 	req, err := http.NewRequest(c.Method(), url, bytes.NewReader(c.Body()))
 	if err != nil {
