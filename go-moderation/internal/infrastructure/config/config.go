@@ -61,16 +61,20 @@ func (c *Config) Validate() error {
 }
 
 // LoadConfig загружает конфиг из файла.
-func LoadConfig(configPath string) (Config, error) {
-	if err := godotenv.Load(); err != nil {
-		if err = godotenv.Load("./go-moderation/.env"); err != nil {
-			return Config{}, fmt.Errorf("error loading .env file: %w", err)
+func LoadConfig(configPath string) (*Config, error) {
+	appEnv := os.Getenv("APP_ENV")
+
+	if appEnv != "prod" && appEnv != "production" {
+		if err := godotenv.Load(); err != nil {
+			if err = godotenv.Load("./go-moderation/.env"); err != nil {
+				return nil, fmt.Errorf("error loading .env file: %w", err)
+			}
 		}
 	}
 
 	raw, err := os.ReadFile(configPath)
 	if err != nil {
-		return Config{}, fmt.Errorf("read config file: %w", err)
+		return nil, fmt.Errorf("read config file: %w", err)
 	}
 
 	// Подставляем переменные окружения
@@ -79,12 +83,12 @@ func LoadConfig(configPath string) (Config, error) {
 	// Парсим YAML
 	var cfg Config
 	if err = yaml.Unmarshal([]byte(expanded), &cfg); err != nil {
-		return Config{}, fmt.Errorf("parse config yaml: %w", err)
+		return nil, fmt.Errorf("parse config yaml: %w", err)
 	}
 
 	if err = cfg.Validate(); err != nil {
-		return Config{}, fmt.Errorf("config validation failed: %w", err)
+		return nil, fmt.Errorf("config validation failed: %w", err)
 	}
 
-	return cfg, nil
+	return &cfg, nil
 }

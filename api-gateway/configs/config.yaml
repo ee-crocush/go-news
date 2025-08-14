@@ -21,8 +21,8 @@ logging:
 
 routes:
   - name: go-news
-    base_url: http://go-news:8081
+    base_url: http://news-main:8081
     health_path: /health
   - name: go-comments
-    base_url: http://go-comments:8082
+    base_url: http://news-comments:8082
     health_path: /health

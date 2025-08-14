@@ -3,12 +3,13 @@ package config
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/go-playground/validator/v10"
-	"github.com/joho/godotenv"
-	"gopkg.in/yaml.v3"
 	"net/url"
 	"os"
 	"time"
+
+	"github.com/go-playground/validator/v10"
+	"github.com/joho/godotenv"
+	"gopkg.in/yaml.v3"
 )
 
 // AppConfig - конфигурация приложения.
@@ -140,16 +141,20 @@ func (c *Config) Validate() error {
 }
 
 // LoadConfig загружает конфиг из файла.
-func LoadConfig(configPath, rssConfigPath string) (Config, error) {
-	if err := godotenv.Load(); err != nil {
-		if err = godotenv.Load("./go-news/.env"); err != nil {
-			return Config{}, fmt.Errorf("error loading .env file: %w", err)
+func LoadConfig(configPath, rssConfigPath string) (*Config, error) {
+	appEnv := os.Getenv("APP_ENV")
+
+	if appEnv != "prod" && appEnv != "production" {
+		if err := godotenv.Load(); err != nil {
+			if err = godotenv.Load("./go-news/.env"); err != nil {
+				return nil, fmt.Errorf("error loading .env file: %w", err)
+			}
 		}
 	}
 
 	raw, err := os.ReadFile(configPath)
 	if err != nil {
-		return Config{}, fmt.Errorf("read config file: %w", err)
+		return nil, fmt.Errorf("read config file: %w", err)
 	}
 
 	// Подставляем переменные окружения
@@ -158,21 +163,21 @@ func LoadConfig(configPath, rssConfigPath string) (Config, error) {
 	// Парсим YAML
 	var cfg Config
 	if err = yaml.Unmarshal([]byte(expanded), &cfg); err != nil {
-		return Config{}, fmt.Errorf("parse config yaml: %w", err)
+		return nil, fmt.Errorf("parse config yaml: %w", err)
 	}
 
 	rssConfig, err := LoadRSSConfig(rssConfigPath)
 	if err != nil {
-		return Config{}, fmt.Errorf("load rss config failed: %w", err)
+		return nil, fmt.Errorf("load rss config failed: %w", err)
 	}
 
 	cfg.RSS = rssConfig
 
 	if err = cfg.Validate(); err != nil {
-		return Config{}, fmt.Errorf("config validation failed: %w", err)
+		return nil, fmt.Errorf("config validation failed: %w", err)
 	}
 
-	return cfg, nil
+	return &cfg, nil
 }
 
 // LoadRSSConfig згружает конфиг для парсинга RSS.

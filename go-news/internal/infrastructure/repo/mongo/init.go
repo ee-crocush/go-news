@@ -4,6 +4,7 @@ package mongo
 import (
 	"context"
 	"fmt"
+
 	"github.com/ee-crocush/go-news/go-news/internal/infrastructure/config"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
@@ -11,7 +12,7 @@ import (
 )
 
 // Init инициализирует БД Монго и возвращает клиент MongoDB и выбранную базу.
-func Init(cfg config.Config) (*mongo.Client, *mongo.Database, error) {
+func Init(cfg *config.Config) (*mongo.Client, *mongo.Database, error) {
 	uri := cfg.MongoDB.URI().String()
 	clientOpts := options.Client().ApplyURI(uri).SetConnectTimeout(cfg.MongoDB.ConnectTimeout)
 

@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
+
 	"github.com/ee-crocush/go-news/pkg/logger"
 
 	"github.com/segmentio/kafka-go"
@@ -27,7 +29,10 @@ func NewConsumer(brokers []string, topic, groupID string, handler ConsumerProces
 			Brokers:        brokers,
 			Topic:          topic,
 			GroupID:        groupID,
+			StartOffset:    kafka.FirstOffset,
 			CommitInterval: 0,
+			MinBytes:       1,
+			MaxBytes:       10e6,
 		},
 	)
 	return &Consumer{reader: reader, handler: handler}
@@ -51,7 +56,19 @@ func (c *Consumer) Start(ctx context.Context) error {
 					continue
 				}
 
+				// Добавляем retry для GroupCoordinatorNotAvailable
+				if kafkaErr, ok := err.(kafka.Error); ok && kafkaErr.Temporary() {
+					log.Warn().Err(err).Msg("Temporary Kafka error, retrying...")
+					time.Sleep(time.Second * 5)
+					continue
+				}
+
 				return fmt.Errorf("failed to fetch message: %w", err)
+			}
+
+			if msg.Offset == 0 && len(msg.Topic) == 0 {
+				time.Sleep(time.Second * 2)
+				continue
 			}
 
 			if err = c.handler.Execute(ctx, msg); err != nil {

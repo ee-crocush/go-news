@@ -110,9 +110,13 @@ func (c *Config) Validate() error {
 
 // LoadConfig загружает конфиг из файла.
 func LoadConfig(configPath string) (*Config, error) {
-	if err := godotenv.Load(); err != nil {
-		if err = godotenv.Load("./api-gateway/.env"); err != nil {
-			return nil, fmt.Errorf("error loading .env file: %w", err)
+	appEnv := os.Getenv("APP_ENV")
+
+	if appEnv != "prod" && appEnv != "production" {
+		if err := godotenv.Load(); err != nil {
+			if err = godotenv.Load("./api-gateway/.env"); err != nil {
+				return nil, fmt.Errorf("error loading .env file: %w", err)
+			}
 		}
 	}
 

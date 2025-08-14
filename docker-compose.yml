@@ -10,7 +10,7 @@ services:
       - ./frontend/.env
     ports:
       - '80:80'
-    networks: [ 'go-news_network' ]
+    networks: [internal_net, go-news_network]
 
   news-kafka:
     image: confluentinc/cp-kafka:7.9.2
@@ -22,9 +22,9 @@ services:
       KAFKA_KRAFT_MODE: true
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
-      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@${KAFKA_HOST}:${KAFKA_INTERNAL_PORT}'
-      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:${KAFKA_PORT},CONTROLLER://0.0.0.0:${KAFKA_INTERNAL_PORT}
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:${KAFKA_PORT}
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@news-kafka:9093'
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://news-kafka:9092
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
@@ -41,11 +41,17 @@ services:
       - news_kafka_data:/var/lib/kafka/data
       - ./kafka/entrypoint.sh:/usr/local/bin/entrypoint.sh
     ports:
-      - '${KAFKA_PORT}:${KAFKA_PORT}'
-      - '${KAFKA_INTERNAL_PORT}:${KAFKA_INTERNAL_PORT}'
+      - '9092:9092'
+      - '9093:9093'
       - '${KAFKA_JMX_PORT}:${KAFKA_JMX_PORT}'
-    networks: [ internal_net ]
-    entrypoint: ["/bin/sh", "/usr/local/bin/entrypoint.sh"]
+    networks: [internal_net, go-news_network]
+    healthcheck:
+      test: ['CMD', 'bash', '-c', 'nc -z localhost 9092 || exit 1']
+      interval: 5m
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    entrypoint: ['/bin/sh', '/usr/local/bin/entrypoint.sh']
 
   news-postgres:
     image: postgres:16.8-bookworm
@@ -53,20 +59,18 @@ services:
     restart: always
     env_file:
       - ./postgres/.env
-    networks: [ 'internal_net' ]
-    command: [ 'postgres', '-p', '${POSTGRES_PORT}', '-c', 'listen_addresses=*' ]
+    networks: ['internal_net']
+    command: ['postgres', '-c', 'listen_addresses=*']
     volumes:
       - news_pg_data:/var/lib/postgresql/data
-      - ./postgres/init-data.sh:/docker-entrypoint-initdb.d/init-data.sh
+      # - ./postgres/init-data.sh:/docker-entrypoint-initdb.d/init-data.sh
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
-      test:
-        [
-          'CMD-SHELL',
-          'pg_isready -p ${POSTGRES_PORT} -h localhost -U ${POSTGRES_USER} -d ${POSTGRES_DB}',
-        ]
-      interval: 5s
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER}']
+      interval: 5m
       timeout: 5s
       retries: 10
+      start_period: 20s
 
   news-mongo:
     image: mongo
@@ -74,93 +78,119 @@ services:
     restart: always
     env_file:
       - ./mongo/.env
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
-    networks: [ 'internal_net' ]
+    # environment:
+    #   MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER}
+    #   MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
+    networks: ['internal_net']
     volumes:
       - news_mongo_data:/data/db
     ports:
       - '${MONGO_PORT}:${MONGO_PORT}'
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'mongosh',
+          '--quiet',
+          'mongodb://localhost:27017/admin',
+          '--eval',
+          "db.adminCommand('ping')",
+        ]
+      interval: 5m
+      timeout: 5s
+      retries: 10
+      start_period: 20s
 
   # API-Gateway
   news-gateway:
     build:
-      context: ./api-gateway
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: api-gateway/Dockerfile
     container_name: news-gateway
     restart: always
     env_file:
       - ./api-gateway/.env
+    volumes:
+      - ./api-gateway/configs/config.yaml:/app/configs/config.yaml:ro
     ports:
       - '${HTTP_PORT}:${HTTP_PORT}'
-    networks: [ 'go-news_network', 'internal_net' ]
+    networks: ['go-news_network', 'internal_net']
     depends_on:
-      - news-main
-      - news-moderation
-      - news-comments
+      news-main:
+        condition: service_healthy
+      news-comments:
+        condition: service_healthy
     healthcheck:
-      test: [ 'CMD', 'curl', '-f', 'http://localhost:${HTTP_PORT}/health' ]
-      interval: 30s
+      test: ['CMD', 'curl', '-f', 'http://localhost:${HTTP_PORT}/health']
+      interval: 5m
       timeout: 5s
-      retries: 3
-      start_period: 10s
+      retries: 5
+      start_period: 30s
 
   # Сервис новостей
   news-main:
     build:
-      context: ./go-news
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: go-news/Dockerfile
     container_name: news-main
     restart: always
     env_file:
       - ./go-news/.env
-    expose:
-      - '${HTTP_PORT}'
-    networks: [ 'internal_net' ]
+    volumes:
+      - ./go-news/configs/config.yaml:/app/configs/config.yaml:ro
+      - ./go-news/configs/rss_config.json:/app/configs/rss_config.json:ro
+    networks: ['go-news_network', 'internal_net']
     depends_on:
-      - news-mongo
+      news-mongo:
+        condition: service_healthy
     healthcheck:
-      test: [ 'CMD', 'curl', '-f', 'http://localhost:${HTTP_PORT}/health' ]
-      interval: 30s
+      test: ['CMD', 'curl', '-f', 'http://localhost:${MAIN_NEWS_PORT}/health']
+      interval: 5m
       timeout: 5s
-      retries: 3
-      start_period: 10s
+      retries: 10
+      start_period: 30s
 
   # Сервис модерации
   news-moderation:
     build:
-      context: ./go-moderation
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: go-moderation/Dockerfile
     container_name: news-moderation
     restart: always
     env_file:
       - ./go-moderation/.env
-    networks: [ 'internal_net' ]
+    volumes:
+      - ./go-moderation/configs/config.yaml:/app/configs/config.yaml:ro
+    networks: ['internal_net']
     depends_on:
-      - news-kafka
+      news-kafka:
+        condition: service_healthy
+      news-comments:
+        condition: service_healthy
 
   # Сервис комментариев
   news-comments:
     build:
-      context: ./go-comments
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: go-comments/Dockerfile
     container_name: news-comments
     restart: always
     env_file:
       - ./go-comments/.env
-    expose:
-      - '${HTTP_PORT}'
-    networks: [ 'internal_net' ]
+    volumes:
+      - ./go-comments/configs/config.yaml:/app/configs/config.yaml:ro
+    networks: ['internal_net']
     depends_on:
-      - news-kafka
-      - news-postgres
+      news-kafka:
+        condition: service_healthy
+      news-postgres:
+        condition: service_healthy
     healthcheck:
-      test: [ 'CMD', 'curl', '-f', 'http://localhost:${HTTP_PORT}/health' ]
-      interval: 30s
+      test: ['CMD', 'curl', '-f', 'http://localhost:${COMMENTS_PORT}/health']
+      interval: 5m
       timeout: 5s
-      retries: 3
-      start_period: 10s
+      retries: 5
+      start_period: 30s
 
 networks:
   go-news_network:

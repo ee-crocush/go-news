@@ -3,18 +3,19 @@ package app
 import (
 	"context"
 	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
+
 	"github.com/ee-crocush/go-news/go-moderation/internal/adapter"
 	"github.com/ee-crocush/go-news/go-moderation/internal/infrastructure/config"
 	"github.com/ee-crocush/go-news/go-moderation/internal/service"
 	"github.com/ee-crocush/go-news/pkg/kafka"
 	"github.com/ee-crocush/go-news/pkg/logger"
 	"github.com/rs/zerolog"
-	"os"
-	"os/signal"
-	"syscall"
 )
 
-func Run(cfg config.Config) {
+func Run(cfg *config.Config) {
 	log := logger.GetLogger()
 
 	// Создаем Publisher
@@ -31,7 +32,7 @@ func Run(cfg config.Config) {
 	gracefulShutdown(ctx, consumer, log)
 }
 
-func initPublisher(cfg config.Config, log *zerolog.Logger) *kafka.Publisher {
+func initPublisher(cfg *config.Config, log *zerolog.Logger) *kafka.Publisher {
 	topic, err := cfg.GetTopic("comment_moderated")
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to get topic")
@@ -40,7 +41,7 @@ func initPublisher(cfg config.Config, log *zerolog.Logger) *kafka.Publisher {
 	return kafka.NewPublisher(cfg.Kafka.Brokers, topic)
 }
 
-func initConsumer(cfg config.Config, log *zerolog.Logger, pub *kafka.Publisher) *kafka.Consumer {
+func initConsumer(cfg *config.Config, log *zerolog.Logger, pub *kafka.Publisher) *kafka.Consumer {
 	moderationService := service.NewService(pub)
 
 	topic, err := cfg.GetTopic("comment_created")

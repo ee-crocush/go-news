@@ -15,7 +15,7 @@ import (
 )
 
 // Run запускает HTTP сервер и инициализирует все необходимые компоненты.
-func Run(cfg config.Config) error {
+func Run(cfg *config.Config) error {
 	repository, err := connectDB(cfg)
 	if err != nil {
 		return fmt.Errorf("failed to connectDB: %w", err)
@@ -28,7 +28,7 @@ func Run(cfg config.Config) error {
 
 	// Создаем Fiber сервер
 	fiberServer := commonFiber.NewFiberServer(
-		&cfg, func(app *fiber.App) {
+		cfg, func(app *fiber.App) {
 			httplib.SetupRoutes(app, commentHandler)
 		},
 	)
@@ -40,7 +40,7 @@ func Run(cfg config.Config) error {
 }
 
 // connectDB выполняет подключение к БД.
-func connectDB(cfg config.Config) (*repo.CommentRepository, error) {
+func connectDB(cfg *config.Config) (*repo.CommentRepository, error) {
 	pgxPool, err := repo.Init(cfg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to postgres: %w", err)
@@ -57,7 +57,7 @@ func connectDB(cfg config.Config) (*repo.CommentRepository, error) {
 }
 
 // initHandler создает хендлеры.
-func initHandler(cfg config.Config, repository *repo.CommentRepository) (*handler.Handler, error) {
+func initHandler(cfg *config.Config, repository *repo.CommentRepository) (*handler.Handler, error) {
 	// Создаем топик, куда будем отправлять события о создании нового комментария, подлежащего модерации
 	topic, err := cfg.GetTopic("comment_created")
 	if err != nil {
@@ -72,7 +72,7 @@ func initHandler(cfg config.Config, repository *repo.CommentRepository) (*handle
 }
 
 // initConsumer создает consumer кафки для получения результатов модерации.
-func initConsumer(cfg config.Config, repository *repo.CommentRepository) (*kafka.Consumer, error) {
+func initConsumer(cfg *config.Config, repository *repo.CommentRepository) (*kafka.Consumer, error) {
 	topic, err := cfg.GetTopic("comment_moderated")
 	if err != nil {
 		return nil, fmt.Errorf("failed to get topic: %w", err)

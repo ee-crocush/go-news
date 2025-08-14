@@ -3,6 +3,8 @@ package app
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/ee-crocush/go-news/go-news/internal/infrastructure/config"
 	repo "github.com/ee-crocush/go-news/go-news/internal/infrastructure/repo/mongo"
 	"github.com/ee-crocush/go-news/go-news/internal/infrastructure/rss"
@@ -15,11 +17,10 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/rs/zerolog"
 	"go.mongodb.org/mongo-driver/v2/mongo"
-	"time"
 )
 
 // Run запускает HTTP сервер и инициализирует все необходимые компоненты.
-func Run(cfg config.Config) error {
+func Run(cfg *config.Config) error {
 	client, db, err := connectDB(cfg)
 	if err != nil {
 		return fmt.Errorf("failed to connect to database: %w", err)
@@ -42,7 +43,7 @@ func Run(cfg config.Config) error {
 	postHandler := initHandler(postRepo)
 	// Создаем Fiber сервер
 	fiberServer := commonFiber.NewFiberServer(
-		&cfg, func(app *fiber.App) {
+		cfg, func(app *fiber.App) {
 			httplib.SetupRoutes(app, postHandler)
 		},
 	)
@@ -52,7 +53,7 @@ func Run(cfg config.Config) error {
 	return serverManager.StartAll(nil)
 }
 
-func connectDB(cfg config.Config) (*mongo.Client, *mongo.Database, error) {
+func connectDB(cfg *config.Config) (*mongo.Client, *mongo.Database, error) {
 	client, db, err := repo.Init(cfg)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to initialize MongoDB: %w", err)
@@ -75,7 +76,7 @@ func initHandler(repos *repo.PostRepository) *handler.Handler {
 	return handler.NewHandler(findByIDUC, findLastUC, findLatestUC, findAllUC)
 }
 
-func startRSSBackgroundJob(cfg config.Config, ucp uc.ParseAndStoreUseCase, log *zerolog.Logger) {
+func startRSSBackgroundJob(cfg *config.Config, ucp uc.ParseAndStoreUseCase, log *zerolog.Logger) {
 	period := cfg.RSS.GetRequestPeriodDuration()
 	ticker := time.NewTicker(period)
 	defer ticker.Stop()

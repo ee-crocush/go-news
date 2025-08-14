@@ -3,8 +3,10 @@ package main
 
 import (
 	"fmt"
+
 	"github.com/ee-crocush/go-news/api-gateway/internal/app"
 	"github.com/ee-crocush/go-news/api-gateway/internal/infrastructure/config"
+	configLoader "github.com/ee-crocush/go-news/pkg/config"
 	"github.com/ee-crocush/go-news/pkg/logger"
 )
 
@@ -25,22 +27,8 @@ import (
 
 // @schemes http
 func main() {
-	paths := []string{
-		"./configs/config.yaml",
-		"./api-gateway/configs/config.yaml",
-	}
-
-	var (
-		cfg *config.Config
-		err error
-	)
-
-	for _, path := range paths {
-		cfg, err = config.LoadConfig(path)
-		if err == nil {
-			break
-		}
-	}
+	configPath := configLoader.FindConfigFile()
+	cfg, err := config.LoadConfig(configPath)
 
 	if err != nil || cfg == nil {
 		fmt.Println("failed to load config from all known paths:", err)

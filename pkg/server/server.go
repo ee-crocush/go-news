@@ -5,12 +5,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/ee-crocush/go-news/pkg/kafka"
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
 	"time"
+
+	"github.com/ee-crocush/go-news/pkg/kafka"
+	"github.com/ee-crocush/go-news/pkg/logger"
 )
 
 var ErrNoServers = errors.New("no servers to start")
@@ -41,11 +43,32 @@ func (sm *ServerManager) StartAll(consumer *kafka.Consumer) error {
 		return ErrNoServers
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), serverTimeout)
-	defer cancel()
-
 	errChan := make(chan error, len(sm.servers))
 	var wg sync.WaitGroup
+
+	// 1️⃣ Стартируем consumer первым
+	if consumer != nil {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+
+			// context без таймаута, чтобы consumer жил до сигнала
+			ctxConsumer, cancelConsumer := context.WithCancel(context.Background())
+			defer cancelConsumer()
+
+			// Retry для старта consumer на случай, если Kafka ещё не готова
+			for {
+				err := consumer.Start(ctxConsumer)
+				if err != nil && !errors.Is(err, context.Canceled) {
+					log := logger.GetLogger()
+					log.Err(err).Msg("Kafka consumer failed, retrying in 5s")
+					time.Sleep(10 * time.Second)
+					continue
+				}
+				break
+			}
+		}()
+	}
 
 	for _, srv := range sm.servers {
 		wg.Add(1)
@@ -57,25 +80,12 @@ func (sm *ServerManager) StartAll(consumer *kafka.Consumer) error {
 		}(srv)
 	}
 
-	// Не забываем про кафку
-	if consumer != nil {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			ctxConsumer, cancelConsumer := context.WithCancel(context.Background())
-			defer cancelConsumer()
-			if err := consumer.Start(ctxConsumer); err != nil {
-				errChan <- err
-			}
-		}()
-	}
-
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 
 	select {
 	case err := <-errChan:
-		sm.shutdownAll(ctx)
+		sm.shutdownAll()
 		if consumer != nil {
 			consumer.Close()
 		}
@@ -87,20 +97,22 @@ func (sm *ServerManager) StartAll(consumer *kafka.Consumer) error {
 			fmt.Println("Shutting kafka consumer...")
 			consumer.Close()
 		}
-		sm.shutdownAll(ctx)
+		sm.shutdownAll()
 		wg.Wait()
 		return nil
 	}
 }
 
 // shutdownAll корректно завершает все сервера.
-func (sm *ServerManager) shutdownAll(ctx context.Context) {
+func (sm *ServerManager) shutdownAll() {
 	var wg sync.WaitGroup
 	wg.Add(len(sm.servers))
 
 	for _, srv := range sm.servers {
 		go func(s GracefulServer) {
 			defer wg.Done()
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
 			if err := s.Shutdown(ctx); err != nil {
 				fmt.Printf("Error shutting down server: %v\n", err)
 			}

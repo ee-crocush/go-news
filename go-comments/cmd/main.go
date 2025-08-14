@@ -3,16 +3,19 @@ package main
 
 import (
 	"fmt"
+
 	"github.com/ee-crocush/go-news/go-comments/internal/app"
 	"github.com/ee-crocush/go-news/go-comments/internal/infrastructure/config"
+	configLoader "github.com/ee-crocush/go-news/pkg/config"
 	"github.com/ee-crocush/go-news/pkg/logger"
 )
 
 func main() {
-	configPath := "./configs/config.yaml"
+	configPath := configLoader.FindConfigFile()
 	cfg, err := config.LoadConfig(configPath)
-	if err != nil {
-		fmt.Println("Failed to load config:", err)
+
+	if err != nil || cfg == nil {
+		fmt.Println("failed to load config from all known paths:", err)
 		return
 	}
 

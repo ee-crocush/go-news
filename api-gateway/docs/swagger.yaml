@@ -1,0 +1,222 @@
+basePath: /
+definitions:
+  dto.Comment:
+    properties:
+      children:
+        items:
+          $ref: '#/definitions/dto.Comment'
+        type: array
+      content:
+        example: Example content
+        type: string
+      id:
+        example: 1
+        type: integer
+      news_id:
+        example: 1
+        type: integer
+      parent_id:
+        example: 1
+        type: integer
+      pub_time:
+        example: "2025-06-26 10:00:43"
+        type: string
+      username:
+        example: Example_username
+        type: string
+    type: object
+  dto.CommentResponse:
+    properties:
+      message:
+        example: Example message success
+        type: string
+      status:
+        example: OK
+        type: string
+    type: object
+  dto.CreateCommentRequest:
+    properties:
+      content:
+        example: Example content
+        type: string
+      news_id:
+        example: 1
+        type: integer
+      parent_id:
+        example: 1
+        type: integer
+      username:
+        example: Example_username
+        type: string
+    type: object
+  dto.Post:
+    properties:
+      content:
+        type: string
+      id:
+        type: integer
+      link:
+        type: string
+      pub_time:
+        type: string
+      title:
+        type: string
+    type: object
+  dto.PostWithComments:
+    properties:
+      comments:
+        items:
+          $ref: '#/definitions/dto.Comment'
+        type: array
+      post:
+        $ref: '#/definitions/dto.Post'
+    type: object
+  health.HealthResponse:
+    properties:
+      service:
+        example: api-gateway
+        type: string
+      status:
+        example: OK
+        type: string
+      uptime:
+        example: 1h23m45s
+        type: string
+      version:
+        example: 1.0.0
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@go-news.example.com
+    name: Вымышленная команда поддержки GoNews
+    url: https://go-news.example.com/support
+  description: API-шлюз для микросервисов агрегатора новостей и комментариев.
+  license:
+    name: MIT License
+    url: https://opensource.org/licenses/MIT
+  termsOfService: https://go-news.example.com/terms/
+  title: GoNews API Gateway
+  version: "1.0"
+paths:
+  /api/comments:
+    post:
+      consumes:
+      - application/json
+      description: Создать новый комментарий для конкретной новости.
+      parameters:
+      - description: Данные нового комментария
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateCommentRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.CommentResponse'
+      summary: Создать новый комментарий
+      tags:
+      - comments
+  /api/news:
+    get:
+      description: Возвращает список всех новостей.
+      parameters:
+      - default: 1
+        description: Страница
+        in: path
+        name: page
+        type: integer
+      - default: '""'
+        description: Поиск заголовка
+        in: path
+        name: search
+        type: string
+      - default: 10
+        description: Страница
+        in: path
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.Post'
+            type: array
+      summary: Получить все новости
+      tags:
+      - news
+  /api/news/{id}:
+    get:
+      description: Возвращает новость по ID.
+      parameters:
+      - description: ID новости
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.PostWithComments'
+      summary: Получить новость по ID
+      tags:
+      - news
+  /api/news/last:
+    get:
+      description: Возвращает последнюю новость.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.Post'
+      summary: Получить последнюю новость
+      tags:
+      - news
+  /api/news/latest/{limit}:
+    get:
+      description: Возвращает последние n новостей.
+      parameters:
+      - default: 10
+        description: Количество последних новостей
+        in: path
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.Post'
+      summary: Получить последние n новостей
+      tags:
+      - news
+  /health:
+    get:
+      description: Возвращает статус сервиса, аптайм и версию.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/health.HealthResponse'
+      summary: Health check
+      tags:
+      - Health
+schemes:
+- http
+swagger: "2.0"

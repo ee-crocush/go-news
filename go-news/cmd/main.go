@@ -3,17 +3,25 @@ package main
 
 import (
 	"fmt"
+
 	"github.com/ee-crocush/go-news/go-news/internal/app"
 	"github.com/ee-crocush/go-news/go-news/internal/infrastructure/config"
+	configLoader "github.com/ee-crocush/go-news/pkg/config"
 	"github.com/ee-crocush/go-news/pkg/logger"
 )
 
 func main() {
-	configPath := "./configs/config.yaml"
-	rssConfigPath := "./configs/rss_config.json"
+	configPath := configLoader.FindConfigFile()
+
+	rssPathes := []string{
+		"./configs/rss_config.json",
+		"./go-news/configs/rss_config.json",
+		"/app/configs/rss_config.json",
+	}
+	rssConfigPath := configLoader.FindConfigFile(rssPathes...)
 	cfg, err := config.LoadConfig(configPath, rssConfigPath)
-	if err != nil {
-		fmt.Println("Failed to load config:", err)
+	if err != nil || cfg == nil {
+		fmt.Println("failed to load config from all known paths:", err)
 		return
 	}
 
