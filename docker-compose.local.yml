@@ -1,0 +1,90 @@
+services:
+  news-kafka:
+    image: confluentinc/cp-kafka:7.9.2
+    container_name: news-kafka
+    restart: always
+    env_file:
+      - ./kafka/.env
+    environment:
+      KAFKA_KRAFT_MODE: true
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@localhost:9093'
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LOG_DIRS: /tmp/kraft-combined-logs
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: ${KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR}
+      KAFKA_LOG_RETENTION_HOURS: 168
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_JMX_PORT: ${KAFKA_JMX_PORT}
+      KAFKA_JMX_HOSTNAME: ${KAFKA_JMX_HOSTNAME}
+      CLUSTER_ID: ${CLUSTER_ID}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - news_kafka_data:/var/lib/kafka/data
+      - ./kafka/entrypoint.sh:/usr/local/bin/entrypoint.sh
+    ports:
+      - '9092:9092'
+      - '9093:9093'
+      - '${KAFKA_JMX_PORT}:${KAFKA_JMX_PORT}'
+    healthcheck:
+      test: ['CMD', 'bash', '-c', 'nc -z localhost 9092 || exit 1']
+      interval: 5m
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    entrypoint: ['/bin/sh', '/usr/local/bin/entrypoint.sh']
+
+  news-postgres:
+    image: postgres:16.8-bookworm
+    container_name: news-postgres
+    restart: always
+    env_file:
+      - ./postgres/.env
+    command: ['postgres', '-c', 'listen_addresses=*']
+    volumes:
+      - news_pg_data:/var/lib/postgresql/data
+      # - ./postgres/init-data.sh:/docker-entrypoint-initdb.d/init-data.sh
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports:
+      - '${POSTGRES_PORT}:5432'
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER}']
+      interval: 5m
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  news-mongo:
+    image: mongo
+    container_name: news-mongo
+    restart: always
+    env_file:
+      - ./mongo/.env
+    volumes:
+      - news_mongo_data:/data/db
+    ports:
+      - '${MONGO_PORT}:${MONGO_PORT}'
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'mongosh',
+          '--quiet',
+          'mongodb://localhost:27017/admin',
+          '--eval',
+          "db.adminCommand('ping')",
+        ]
+      interval: 5m
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+volumes:
+  news_kafka_data:
+  news_mongo_data:
+  news_pg_data:
